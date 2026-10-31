@@ -1,0 +1,5 @@
+# the original downloads (72 MB); prep_models.py reads them, they are not part of the site
+/*.glb
+# per-group lighting atlases: already embedded in docs/models/museum.glb
+build/bake_*.jpg
+build/build.log

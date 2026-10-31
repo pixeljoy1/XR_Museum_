@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>XR Museum: the Bihar floor</title>
+  <!-- Pinned A-Frame release. WebXR needs HTTPS; GitHub Pages provides it. -->
+  <script src="https://aframe.io/releases/1.7.0/aframe.min.js"></script>
+  <style>
+    /* Status line for the flat (non-VR) view. Handy on the Quest, which has no console. */
+    #status { position: fixed; left: 12px; top: 12px; z-index: 10; padding: 6px 10px;
+              font: 13px/1.3 system-ui, sans-serif; color: #fff; background: rgba(0,0,0,.6);
+              border-radius: 6px; pointer-events: none; max-width: 70vw; }
+    #status.done { opacity: 0; transition: opacity 1.5s 2s; }
+    #status.error { background: #a01818; }
+    #reset-btn { position: fixed; right: 12px; top: 12px; z-index: 10; padding: 7px 14px;
+                 font: 600 13px system-ui, sans-serif; color: #fff; background: rgba(0,0,0,.6);
+                 border: 1px solid rgba(255,255,255,.4); border-radius: 6px; cursor: pointer; }
+    #reset-btn:hover { background: #b3261e; }
+  </style>
+</head>
+<body>
+  <div id="status">Loading the museum…</div>
+  <button id="reset-btn" type="button" title="Reset the experience (R)">Reset</button>
+
+  <a-scene background="color: #07070a" renderer="colorManagement: true">
+
+    <!-- The room carries its own light: every surface was baked in Cycles and exported as an
+         emissive texture, so these lights fall only on the three masterpieces. -->
+    <a-entity light="type: ambient; intensity: 0.22; color: #b9c4d6"></a-entity>
+    <a-entity light="type: point; intensity: 11; distance: 7; decay: 2; color: #ffd6a6" position="0 4.08 -10.14"></a-entity>
+    <a-entity light="type: point; intensity: 6; distance: 9; decay: 2; color: #ffe0ba" position="0 5.40 -7.24"></a-entity>
+    <a-entity light="type: point; intensity: 11; distance: 7; decay: 2; color: #ffd6a6" position="-8.78 4.08 5.07"></a-entity>
+    <a-entity light="type: point; intensity: 6; distance: 9; decay: 2; color: #ffe0ba" position="-6.27 5.40 3.62"></a-entity>
+    <a-entity light="type: point; intensity: 14; distance: 9; decay: 2; color: #ffd6a6" position="8.78 4.08 5.07"></a-entity>
+    <a-entity light="type: point; intensity: 7; distance: 10; decay: 2; color: #ffe0ba" position="6.27 5.40 3.62"></a-entity>
+
+    <!-- Everything the teleport ray and walking can hit lives under #world.
+         WALK_* meshes inside museum.glb (the floors) are standable; every other mesh blocks. -->
+    <a-entity id="world">
+      <a-entity id="museum" gltf-model="url(models/museum.glb?v=1)"></a-entity>
+      <!-- Invisible blockers so you cannot walk your head through a masterpiece. The plinths
+           themselves are solid geometry in the model; these cover the piece standing on top. -->
+      <a-box class="blocker" position="0 1.37 -11.06" rotation="0 0 0" width="0.5" height="0.62" depth="0.6"
+             material="transparent: true; opacity: 0; depthWrite: false"></a-box>
+      <a-box class="blocker" position="-9.58 1.40 5.53" rotation="0 120 0" width="0.8" height="0.86" depth="0.8"
+             material="transparent: true; opacity: 0; depthWrite: false"></a-box>
+      <a-box class="blocker" position="9.58 1.72 5.53" rotation="0 -120 0" width="1.7" height="3.0" depth="3.2"
+             material="transparent: true; opacity: 0; depthWrite: false"></a-box>
+    </a-entity>
+
+    <!-- The three masterpieces. They sit outside #world: they are 55-70k triangles each and the
+         per-frame collision raycasts must never see them (the blockers above stand in for them). -->
+    <a-entity id="art">
+      <a-entity gltf-model="url(models/nefertiti.glb?v=1)" position="0 1.074 -11.061" rotation="0 0 0"></a-entity>
+      <a-entity gltf-model="url(models/caesar.glb?v=1)"    position="-9.579 0.974 5.531" rotation="0 120 0"></a-entity>
+      <a-entity gltf-model="url(models/rocket.glb?v=1)"    position="9.579 0.224 5.531" rotation="0 -120 0"></a-entity>
+    </a-entity>
+
+    <!-- The ONE board, standing in the lobby where you come in (template: plaque.js).
+         Bump `version` on every publish. -->
+    <a-entity id="plaque" plaque="title: XR MUSEUM; name: Aritra Mitra;
+        detail: BDes, Immersive Digital Environments|O.P. Jindal Global University, Class of 2028|After the Bihar Museum, Patna;
+        columns: #WALK|Stick: walk and turn|Trigger: go faster|Left stick fwd: jump ## #FLY  (press A)|Trigger: glide ahead|Stick back: reverse|Left stick: up / down|Wrist: steer ## #ANYTIME|B or Y: reset|X: back to this board|A: walk or fly||Three corners,|three masterpieces;
+        version: 1.01"
+        position="3.0 0 23.0" rotation="0 -20 0"></a-entity>
+
+    <!-- Gallery labels: the same plaque construct, scaled down to label size. -->
+    <a-entity plaque="title: NEFERTITI; name: Bust of Nefertiti;
+        detail: Thutmose, c. 1345 BCE|Limestone and stucco|Amarna, Egypt;
+        version: 1.01" position="1.6 0 -10.2" rotation="0 0 0" scale="0.55 0.55 0.55"></a-entity>
+    <a-entity plaque="title: CAESAR; name: Bust of Julius Caesar;
+        detail: Roman, 1st century BCE|Marble|Musee du Louvre, Paris;
+        version: 1.01" position="-8.83 0 6.83" rotation="0 120 0" scale="0.55 0.55 0.55"></a-entity>
+    <a-entity plaque="title: ROCKET; name: Stephensons Rocket;
+        detail: Robert Stephenson, 1829|Iron, copper and brass|Rainhill Trials, England;
+        version: 1.01" position="8.48 0 7.43" rotation="0 -120 0" scale="0.55 0.55 0.55"></a-entity>
+
+    <!-- Reset dialog. Opens in front of you (Y button, R key or the Reset button). -->
+    <a-entity id="dialog" visible="false">
+      <a-plane color="#000" opacity="0.85" width="2.0" height="1.0" position="0 0 -0.01"></a-plane>
+      <a-text value="RESET THE EXPERIENCE?" align="center" color="#ffd84d" position="0 0.33 0" width="1.8"></a-text>
+      <a-text value="Takes you back to the entrance and&#10;reloads the museum." align="center" color="#ddd"
+              position="0 0.1 0" width="1.5"></a-text>
+      <a-plane id="dlg-yes" data-btn color="#b3261e" width="0.8" height="0.3" position="-0.45 -0.27 0">
+        <a-text value="RESET" align="center" position="0 0 0.01" width="1.4"></a-text>
+      </a-plane>
+      <a-plane id="dlg-no" data-btn color="#4a4a4a" width="0.8" height="0.3" position="0.45 -0.27 0">
+        <a-text value="CANCEL" align="center" position="0 0 0.01" width="1.4"></a-text>
+      </a-plane>
+    </a-entity>
+
+    <!-- Player rig: moving the rig moves the player, never the camera itself -->
+    <a-entity id="rig" position="0 0 25.2" locomotion>
+      <a-camera id="cam">
+        <a-plane id="fade" width="2" height="2" position="0 0 -0.1" visible="false" material="shader: flat; color: #000; transparent: true; opacity: 0; depthTest: false" render-order="999"></a-plane>
+        <a-text id="modetxt" value="" align="center" color="#ffd84d" position="0 -0.3 -1" width="1.6" visible="false"></a-text>
+      </a-camera>
+      <!-- Left hand: teleport (stick forward), Y = reset -->
+      <a-entity id="lhand" oculus-touch-controls="hand: left" teleport></a-entity>
+      <!-- Right hand: trigger walks, stick turns. Its pointer ray is only on while the reset dialog is open. -->
+      <a-entity id="rhand" oculus-touch-controls="hand: right"></a-entity>
+    </a-entity>
+  </a-scene>
+
+  <noscript>This VR showcase needs JavaScript and a WebXR browser such as the Meta Quest Browser.</noscript>
+
+  <script src="plaque.js?v=1.01"></script>
+  <script>
+    var T = AFRAME.THREE;
+    function $(id) { return document.getElementById(id); }
+    function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+    function dead(v) { var a = Math.abs(v); return a < 0.15 ? 0 : Math.sign(v) * (a - 0.15) / 0.85; }
+
+    // Where the controller "points". If the aim feels too high or low on your headset,
+    // add ?aim=<degrees> to the URL (positive = tilts the aim up).
+    var QS = new URLSearchParams(location.search);
+    var AIM_Q = new T.Quaternion().setFromAxisAngle(new T.Vector3(1, 0, 0), (parseFloat(QS.get('aim')) || 0) * Math.PI / 180);
+    var _aq = new T.Quaternion();
+    function aimRay(el, origin, dir) {                 // scratch objects only: no garbage per frame
+      el.object3D.getWorldPosition(origin);
+      el.object3D.getWorldQuaternion(_aq).multiply(AIM_Q);
+      dir.set(0, 0, -1).applyQuaternion(_aq);
+    }
+    // A mesh is walkable if it, or a parent, is named WALK_* (from Blender) or is .walkable.
+    function isWalkMesh(obj) {
+      for (var o = obj; o; o = o.parent) {
+        if (o.name && /^WALK_/.test(o.name)) return true;
+        if (o.el && o.el.classList && o.el.classList.contains('walkable')) return true;
+      }
+      return false;
+    }
+
+    var BX = 17, BZ = 28;                               // you cannot walk or teleport outside this box
+    var MODEL_URL = 'url(models/museum.glb?v=1)';
+    var START = [0, 0, 25.2];
+
+    function loco() { return $('rig').components.locomotion; }
+    // The dialog's buttons are picked with our own raycast (controller trigger or mouse click),
+    // not A-Frame's cursor, which misses clicks that arrive without a hover first.
+    function pointer(on) {
+      var h = $('rhand');
+      if (on) { if (!h.components.raycaster) h.setAttribute('raycaster', 'objects: [data-btn]; far: 8; showLine: true; lineColor: #44ff88'); }
+      else h.removeAttribute('raycaster');
+    }
+    var pickRay = new T.Raycaster();
+    function pickDialog() {                                  // uses whatever ray pickRay was just aimed with
+      var yes = $('dlg-yes').getObject3D('mesh'), no = $('dlg-no').getObject3D('mesh');
+      if (!yes || !no) return;
+      var hit = pickRay.intersectObjects([yes, no], false)[0];
+      if (!hit) return;
+      if (hit.object === yes) resetAll(); else closeDialog();
+    }
+    function disposeTree(root) {
+      root.traverse(function (o) {
+        if (o.geometry) o.geometry.dispose();
+        var ms = Array.isArray(o.material) ? o.material : [o.material];
+        ms.forEach(function (m) {
+          if (!m) return;
+          for (var k in m) { var v = m[k]; if (v && v.isTexture) v.dispose(); }
+          m.dispose();
+        });
+      });
+    }
+
+    // ---------------------------------------------------------------
+    // Teleport (LEFT hand): push the left thumbstick forward to show an arc,
+    // release to jump to where it lands.
+    // ---------------------------------------------------------------
+    AFRAME.registerComponent('teleport', {
+      init: function () {
+        var self = this;
+        this.rig = $('rig'); this.cam = $('cam'); this.world = $('world');
+        this.aiming = false; this.last = null; this.targets = [];
+        this.raycaster = new T.Raycaster();
+        this.N = 26; // arc segments
+        this._o = new T.Vector3(); this._d = new T.Vector3();
+        var geo = new T.BufferGeometry();
+        geo.setAttribute('position', new T.BufferAttribute(new Float32Array((this.N + 1) * 3), 3));
+        this.line = new T.Line(geo, new T.LineBasicMaterial({ color: 0x44ff88 }));
+        this.dots = new T.Points(geo, new T.PointsMaterial({ color: 0x44ff88, size: 0.06 }));
+        this.line.frustumCulled = this.dots.frustumCulled = false;
+        this.line.visible = this.dots.visible = false;
+        this.marker = new T.Mesh(new T.RingGeometry(0.22, 0.32, 32).rotateX(-Math.PI / 2),
+                                 new T.MeshBasicMaterial({ color: 0x44ff88, side: T.DoubleSide }));
+        this.marker.visible = false;
+        this.el.sceneEl.object3D.add(this.line, this.dots, this.marker);
+        // Quest thumbsticks report through "thumbstickmoved" ({x, y}, y < 0 = pushed forward)
+        this.el.addEventListener('thumbstickmoved', function (e) { self.onStick(e.detail.x, e.detail.y); });
+      },
+      collect: function () {
+        var list = [];
+        this.world.object3D.traverse(function (o) { if (o.isMesh) list.push(o); });
+        this.targets = list;
+      },
+      // Follow a thrown-ball path from the hand and stop at the first surface.
+      // Valid landing = the first thing hit is walkable AND faces up.
+      computeArc: function (origin, dir) {
+        var v = 10, g = 9.8, dt = 0.05;
+        var pts = [origin.clone()], p0 = origin.clone(), hit = null, valid = false;
+        for (var i = 1; i <= this.N; i++) {
+          var t = i * dt;
+          var p1 = new T.Vector3(origin.x + dir.x * v * t, origin.y + dir.y * v * t - 0.5 * g * t * t, origin.z + dir.z * v * t);
+          var seg = p1.clone().sub(p0), len = seg.length();
+          this.raycaster.set(p0, seg.normalize());
+          this.raycaster.far = len;
+          var hits = this.raycaster.intersectObjects(this.targets, false);
+          if (hits.length) {
+            var h = hits[0];
+            var n = h.face.normal.clone().transformDirection(h.object.matrixWorld);
+            valid = isWalkMesh(h.object) && n.y > 0.9;
+            hit = h.point.clone();
+            pts.push(hit);
+            break;
+          }
+          pts.push(p1.clone());
+          p0 = p1;
+        }
+        return { pts: pts, hit: hit, valid: valid };
+      },
+      onStick: function (x, y) {
+        var L = loco();
+        if (L) L.ls = y;                                   // fly mode uses the left stick for altitude
+        if (!this.aiming && y < -0.75 && !(L && (L.paused || L.mode === 'fly'))) {
+          this.aiming = true;
+          this.collect();
+          this.line.visible = this.dots.visible = true;
+        } else if (this.aiming && y > -0.35) {
+          this.aiming = false;
+          this.line.visible = this.dots.visible = this.marker.visible = false;
+          if (this.last && this.last.valid) this.teleportTo(this.last.hit);
+        }
+      },
+      // Move the rig so the player's HEAD lands on the target (not the rig origin).
+      teleportTo: function (p) {
+        var head = this._o, rig = this.rig.object3D;
+        this.cam.object3D.getWorldPosition(head);
+        rig.position.x += clamp(p.x, -BX, BX) - head.x;
+        rig.position.z += clamp(p.z, -BZ, BZ) - head.z;
+        rig.position.y = p.y; // floor height of the spot we landed on
+      },
+      tick: function () {
+        if (!this.aiming) return;
+        var o = this._o, d = this._d;
+        aimRay(this.el, o, d);
+        var r = this.last = this.computeArc(o, d);
+        var pos = this.line.geometry.attributes.position;
+        r.pts.forEach(function (p, i) { pos.setXYZ(i, p.x, p.y, p.z); });
+        this.line.geometry.setDrawRange(0, r.pts.length);
+        pos.needsUpdate = true;
+        var c = r.valid ? 0x44ff88 : 0xff4444;
+        this.line.material.color.setHex(c); this.dots.material.color.setHex(c);
+        this.marker.material.color.setHex(c);
+        this.marker.visible = !!r.hit;
+        if (r.hit) this.marker.position.set(r.hit.x, r.hit.y + 0.02, r.hit.z);
+      },
+      remove: function () {
+        this.el.sceneEl.object3D.remove(this.line, this.dots, this.marker);
+        this.line.geometry.dispose(); this.line.material.dispose(); this.dots.material.dispose();
+        this.marker.geometry.dispose(); this.marker.material.dispose();
+      }
+    });
+
+    // ---------------------------------------------------------------
+    // Walking. RIGHT controller: hold the TRIGGER to walk where it points (level, pitch ignored).
+    // Thumbstick at the same time: left/right turns you, forward/back also walks.
+    // A switches to FLY. You follow the floor and stop at walls, plinths and furniture.
+    // ---------------------------------------------------------------
+    var WALK_SPEED = 2.1, WALK_BACK = 1.2;          // metres per second
+    var WALK_ACCEL = 10, WALK_BRAKE = 14;           // how fast velocity follows the target (1/s)
+    var STICK_YAW = 1.9;                            // rad/s at full stick (about 110 deg/s)
+    var WALK_BOOST = 1.2, WALK_RAMP = 3.5;          // trigger adds up to +120% speed, building up at this rate (1/s)
+    var FLY_SPEED = 4.5, FLY_BACK = 3.4, CLIMB_SPEED = 1.4, FLY_PITCH = 0.2;   // fly mode (m/s)
+    var FLY_ACCEL = 2.4, FLY_REV = 5.0, FLY_BRAKE = 3.5;                        // 1/s
+    var AIM_DEAD = 0.1, AIM_GAIN = 3.4, AIM_MAX = 2.6;                      // wrist steering
+    var FLY_RADIUS = 0.4, FLY_MIN_ALT = 0.7, BY = 8.5, BSOFT = 4;
+    var WALK_RADIUS = 0.3, MAX_STEP_UP = 0.36, MAX_DROP = 0.6;
+    var BODY_RAYS = [0.2, 0.55, 1.05, 1.5];     // heights above the floor that must be clear
+
+    AFRAME.registerComponent('locomotion', {
+      init: function () {
+        var self = this;
+        this.paused = false; this.dialogOpen = false; this.mode = 'walk';
+        this.trig = 0; this.keyTrig = 0;      // right trigger 0..1, Space on desktop
+        this.sx = 0; this.sy = 0;             // right thumbstick
+        this.kx = 0; this.ky = 0; this.ls = 0; this.kls = 0;             // desktop keys standing in for the stick
+        this.vel = new T.Vector3();
+        this.yawRate = 0; this.groundY = 0;
+        this.aimOverride = null; this.vrTest = false;   // test hooks
+        this.raycaster = new T.Raycaster();
+        this.cam = $('cam'); this.hand = $('rhand'); this.world = $('world');
+        this.all = []; this.solid = []; this.floors = [];
+        this._h = new T.Vector3(); this._o = new T.Vector3(); this._d = new T.Vector3();
+        this._t = new T.Vector3(); this._a = new T.Vector3(); this._q = new T.Quaternion();
+        this._u = new T.Vector3(); this._w1 = new T.Vector3(); this._w2 = new T.Vector3();
+
+        this.hand.addEventListener('triggerchanged', function (e) { self.trig = e.detail.value; });
+        this.hand.addEventListener('triggerdown', function () {
+          self.trig = 1;
+          if (self.dialogOpen) {                     // dialog is up: the trigger presses the button we point at
+            var hq = new T.Quaternion(), ho = new T.Vector3();
+            self.hand.object3D.getWorldPosition(ho); self.hand.object3D.getWorldQuaternion(hq);
+            pickRay.set(ho, new T.Vector3(0, 0, -1).applyQuaternion(hq));
+            pickDialog();
+          }
+        });
+        this.hand.addEventListener('triggerup', function () { self.trig = 0; });
+        this.hand.addEventListener('thumbstickmoved', function (e) { self.sx = e.detail.x; self.sy = e.detail.y; });
+        $('lhand').addEventListener('ybuttondown', function () { openDialog(); });
+        $('lhand').addEventListener('xbuttondown', function () { self.goToPlaque(); });
+        // Right hand: A switches walk / fly, B opens reset.
+        this.hand.addEventListener('abuttondown', function () { self.toggleMode(); });
+        this.hand.addEventListener('bbuttondown', function () { openDialog(); });
+
+        // Desktop fallback: Space = trigger, arrows / WASD = thumbstick, R = reset, Esc = close dialog.
+        var keys = {};
+        function stickKeys() {
+          self.kx = (keys.ArrowRight || keys.KeyD ? 1 : 0) - (keys.ArrowLeft || keys.KeyA ? 1 : 0);
+          self.ky = (keys.ArrowDown || keys.KeyS ? 1 : 0) - (keys.ArrowUp || keys.KeyW ? 1 : 0);
+          self.kls = (keys.KeyQ ? 1 : 0) - (keys.KeyE ? 1 : 0);      // desktop: E = up, Q = down while flying
+        }
+        window.addEventListener('keydown', function (e) {
+          keys[e.code] = true; stickKeys();
+          if (e.code === 'Space') { self.keyTrig = 1; e.preventDefault(); }
+          else if (e.code === 'KeyR') openDialog();
+          else if (e.code === 'KeyF') self.toggleMode();
+          else if (e.code === 'KeyP') self.goToPlaque();
+          else if (e.code === 'Escape') closeDialog();
+        });
+        window.addEventListener('keyup', function (e) {
+          keys[e.code] = false; stickKeys();
+          if (e.code === 'Space') self.keyTrig = 0;
+        });
+
+        // Mouse: click on a dialog button
+        var sc0 = this.el.sceneEl;
+        sc0.addEventListener('render-target-loaded', bindMouse);
+        if (sc0.canvas) bindMouse();
+        function bindMouse() {
+          if (bindMouse.done || !sc0.canvas) return;
+          bindMouse.done = true;
+          sc0.canvas.addEventListener('click', function (e) {
+            if (!self.dialogOpen || sc0.is('vr-mode')) return;
+            var r = sc0.canvas.getBoundingClientRect();
+            pickRay.setFromCamera(new T.Vector2((e.clientX - r.left) / r.width * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1), sc0.camera);
+            pickDialog();
+          });
+        }
+        $('reset-btn').addEventListener('click', function () { openDialog(); });
+        var sc = this.el.sceneEl;
+        sc.addEventListener('enter-vr', function () { $('reset-btn').style.display = 'none'; });
+        sc.addEventListener('exit-vr', function () { $('reset-btn').style.display = ''; });
+      },
+
+      // Sort every mesh under #world into floors (can stand on) and solid (blocks you).
+      collect: function () {
+        var all = [], solid = [], floors = [];
+        this.world.object3D.traverse(function (o) {
+          if (!o.isMesh) return;
+          all.push(o);
+          (isWalkMesh(o) ? floors : solid).push(o);
+        });
+        this.all = all; this.solid = solid; this.floors = floors; this.flyHit = solid.concat(floors);
+        // The museum never moves, so keep each mesh's world-space bounding box. Per frame we then
+        // test only the few near the player instead of all of them.
+        this.world.object3D.updateMatrixWorld(true);
+        all.forEach(function (o) {
+          if (!o.geometry.boundingBox) o.geometry.computeBoundingBox();
+          o.userData.box = o.geometry.boundingBox.clone().applyMatrix4(o.matrixWorld);
+        });
+      },
+
+      // Turn the rig about the player's head so the head stays put in the world.
+      rotateRig: function (yaw) {
+        var rig = this.el.object3D, a = this._w1, b = this._w2;
+        this.cam.object3D.getWorldPosition(a);
+        rig.rotation.set(0, yaw, 0, 'YXZ');
+        rig.updateMatrixWorld(true);
+        this.cam.object3D.getWorldPosition(b);
+        rig.position.add(a.sub(b));
+      },
+
+      // Direction the player wants to go: the controller in VR, or the head on desktop.
+      getAim: function () {
+        var d = this._a;
+        if (this.aimOverride) return d.copy(this.aimOverride).normalize();
+        if (!this.vrTest && !this.el.sceneEl.is('vr-mode')) {
+          this.cam.object3D.getWorldQuaternion(this._q);
+          return d.set(0, 0, -1).applyQuaternion(this._q);
+        }
+        aimRay(this.hand, this._o, d);
+        return d;
+      },
+
+      // Height of the floor under (x, z), looking down from fromY. null = nothing to stand on.
+      groundAt: function (x, z, fromY) {
+        this.raycaster.set(this._o.set(x, fromY, z), this._d.set(0, -1, 0));
+        this.raycaster.far = fromY + 20;
+        var hits = this.raycaster.intersectObjects(this.floors, false);
+        return hits.length ? hits[0].point.y : null;
+      },
+
+      // Is it OK to move the player's body by (sx, sz)? Walls and plinths block, steps must be low enough.
+      passable: function (head, base, sx, sz) {
+        var len = Math.hypot(sx, sz);
+        if (len < 1e-6) return true;
+        var dx = sx / len, dz = sz / len, px = -dz, pz = dx;
+        this.raycaster.far = len + WALK_RADIUS;
+        // three rays side by side so thin things cannot be squeezed between
+        for (var i = 0; i < BODY_RAYS.length; i++) {
+          var wide = BODY_RAYS[i] > 0.3 && BODY_RAYS[i] < 1.3;
+          for (var s = 0; s < 3; s++) {
+            if (!wide && s !== 1) continue;
+            var off = (s - 1) * 0.25;
+            this.raycaster.set(this._o.set(head.x + px * off, base + BODY_RAYS[i], head.z + pz * off), this._d.set(dx, 0, dz));
+            if (this.raycaster.intersectObjects(this.nearS, false).length) return false;
+          }
+        }
+        // floor ahead: not too high to step up, and no drop off an edge
+        var g = this.groundAt(head.x + dx * (len + 0.15), head.z + dz * (len + 0.15), base + MAX_STEP_UP + 0.1);
+        return g !== null && g - base <= MAX_STEP_UP && base - g <= MAX_DROP;
+      },
+
+      // Stand in front of the plaque, facing it, in walk mode. (Left X button, P on desktop.)
+      goToPlaque: function () {
+        if (this.paused) return;
+        var rig = this.el.object3D, pe = $('plaque').object3D, p = pe.position, head = this._h;
+        var yaw = pe.rotation.y, nx = Math.sin(yaw), nz = Math.cos(yaw);       // the board's front normal
+        var tx = p.x + nx * 1.9, tz = p.z + nz * 1.9;
+        this.mode = 'walk'; this.vel.set(0, 0, 0); this.yawRate = 0; this.mv = undefined;
+        this.rotateRig(yaw);                                                   // look straight at the board
+        this.cam.object3D.getWorldPosition(head);
+        rig.position.x += tx - head.x;
+        rig.position.z += tz - head.z;
+        var g = this.groundAt(tx, tz, rig.position.y + 30);
+        this.groundY = g !== null ? g : 0; rig.position.y = this.groundY;
+      },
+
+      toggleMode: function () {
+        if (this.paused) return;
+        this.mode = this.mode === 'walk' ? 'fly' : 'walk';
+        this.vel.set(0, 0, 0); this.yawRate = 0;
+        this.rotateRig(this.el.object3D.rotation.y);
+        if (this.mode === 'walk') {                       // land: stand on whatever floor is below
+          this.cam.object3D.getWorldPosition(this._h);
+          var g = this.groundAt(this._h.x, this._h.z, this._h.y + 0.05);
+          this.groundY = g !== null ? g : 0;
+        }
+        var t = $('modetxt');
+        t.setAttribute('value', this.mode === 'fly' ? 'FLY MODE   (A = walk)' : 'WALK MODE   (A = fly)');
+        t.setAttribute('visible', true);
+        clearTimeout(this._mt); this._mt = setTimeout(function () { t.setAttribute('visible', false); }, 2200);
+      },
+
+      tick: function (time, dtMs) {
+        if (this.paused) return;
+        var dt = Math.min(dtMs, 50) / 1000, rig = this.el.object3D, head = this._h, vel = this.vel;
+        var trig = Math.max(this.trig, this.keyTrig);
+        var sx = dead(this.sx + this.kx), sy = dead(this.sy + this.ky);   // sy < 0 = stick pushed forward
+        var fly = this.mode === 'fly';
+        var aim = this.getAim();
+
+        // turn with the stick (and, flying with the trigger held, by pointing the wrist left or right)
+        var yawT = -sx * STICK_YAW;
+        if (fly && trig > 0.15 && (this.vrTest || this.el.sceneEl.is('vr-mode'))) {
+          var off = Math.atan2(-aim.x, -aim.z) - rig.rotation.y;
+          off = Math.atan2(Math.sin(off), Math.cos(off));
+          var ex = Math.abs(off) - AIM_DEAD;
+          if (ex > 0) yawT += Math.sign(off) * Math.min(ex * AIM_GAIN, AIM_MAX);
+        }
+        this.yawRate += (yawT - this.yawRate) * (1 - Math.exp(-9 * dt));
+        if (Math.abs(this.yawRate) > 1e-3) this.rotateRig(rig.rotation.y + this.yawRate * dt);
+
+        if (fly) {
+          // trigger glides ahead, right stick back reverses, left stick up/down changes height gently
+          var c = clamp(trig - sy, -1, 1), ls = dead(this.ls + this.kls);
+          var hh = this._u.set(aim.x, 0, aim.z);
+          if (hh.lengthSq() < 1e-4) { this.cam.object3D.getWorldQuaternion(this._q); hh.set(0, 0, -1).applyQuaternion(this._q); hh.y = 0; }
+          hh.normalize();
+          var sp = c >= 0 ? FLY_SPEED * c * c * (3 - 2 * c) : FLY_BACK * c;
+          var tg = this._t.copy(hh).multiplyScalar(sp);
+          tg.y = clamp((c > 0 ? clamp(aim.y, -1, 1) * sp * FLY_PITCH : 0) - ls * CLIMB_SPEED, -CLIMB_SPEED, CLIMB_SPEED);
+          var braking = Math.abs(c) < 0.05 && Math.abs(ls) < 0.05, k = braking ? FLY_BRAKE : (c < -0.05 ? FLY_REV : FLY_ACCEL);
+          var ke = 1 - Math.exp(-k * dt), kv = 1 - Math.exp(-Math.max(k, 2.5) * dt);
+          vel.x += (tg.x - vel.x) * ke; vel.z += (tg.z - vel.z) * ke; vel.y += (tg.y - vel.y) * kv;
+          if (braking && vel.lengthSq() < 0.0004) vel.set(0, 0, 0);
+          this.stepFly(dt);
+          this.keepInside(); this.fadeNearWalls();
+          return;
+        }
+
+        // walk: stick forward/back walks; the trigger alone also walks; the trigger on top adds speed
+        var stick = Math.abs(sy) > 0.02;
+        var fwd = clamp(stick ? -sy : trig, -1, 1);
+        var h = this._u.set(aim.x, 0, aim.z);
+        if (h.lengthSq() < 1e-4) { this.cam.object3D.getWorldQuaternion(this._q); h.set(0, 0, -1).applyQuaternion(this._q); h.y = 0; }
+        h.normalize();
+        var boost = fwd > 0 ? 1 + WALK_BOOST * trig : 1;
+        var speed = fwd >= 0 ? WALK_SPEED * fwd * boost : WALK_BACK * fwd;
+        var tgt = this._t.copy(h).multiplyScalar(speed);
+        var acc = Math.abs(fwd) < 0.02 ? WALK_BRAKE : (trig > 0.05 && fwd > 0 ? WALK_RAMP : WALK_ACCEL);
+        vel.lerp(tgt, 1 - Math.exp(-acc * dt));
+        if (Math.abs(fwd) < 0.02 && vel.lengthSq() < 0.0004) vel.set(0, 0, 0);
+
+        this.stepWalk(dt);
+        this.keepInside(); this.fadeNearWalls();
+      },
+
+      // The meshes within R metres of p (cheap box test, no raycasting).
+      near: function (list, p, R) {
+        var out = [];
+        for (var i = 0; i < list.length; i++) {
+          var b = list[i].userData.box;
+          if (b && b.distanceToPoint(p) < R) out.push(list[i]);
+        }
+        return out;
+      },
+
+      // Head too close to a wall (leaning in room scale): fade to black instead of showing the inside of it.
+      fadeNearWalls: function () {
+        var f = $('fade'), head = this._h, near = 1, i;
+        this.cam.object3D.getWorldPosition(head);
+        var ns = this.near(this.solid, head, 0.3);
+        this.raycaster.far = 0.14;
+        for (i = 0; i < 4; i++) {
+          this.raycaster.set(head, this._d.set(i === 0 ? 1 : i === 1 ? -1 : 0, 0, i === 2 ? 1 : i === 3 ? -1 : 0));
+          var h = this.raycaster.intersectObjects(ns, false)[0];
+          if (h) near = Math.min(near, h.distance / 0.14);
+        }
+        var a = near < 1 ? Math.min(0.95, 1 - near) : 0;
+        if (a !== this._fa) { this._fa = a; f.setAttribute('material', 'opacity', a); f.setAttribute('visible', a > 0.01); }
+      },
+
+      // Flying: slide along anything solid, stay above the floor, never leave the play box.
+      stepFly: function (dt) {
+        var rig = this.el.object3D, head = this._h, vel = this.vel;
+        this.cam.object3D.getWorldPosition(head);
+        // soft wall: speed fades out over the last BSOFT metres towards each edge
+        var lim = [[head.x, BX, 'x'], [head.z, BZ, 'z'], [head.y, BY, 'y']];
+        for (var i = 0; i < 3; i++) {
+          var p = lim[i][0], L = lim[i][1], ax = lim[i][2], v = vel[ax];
+          var d = v > 0 ? L - p : v < 0 && ax !== 'y' ? L + p : 99;
+          if (d < BSOFT) vel[ax] *= Math.exp(-(1 - Math.max(d, 0) / BSOFT) * 8 * dt);
+        }
+        var speed = vel.length();
+        if (speed > 0.001) {
+          var dir = this._d.copy(vel).divideScalar(speed);
+          var u = this._u.set(0, 1, 0).cross(dir);
+          if (u.lengthSq() < 1e-4) u.set(1, 0, 0);
+          u.normalize().multiplyScalar(FLY_RADIUS * 0.7);
+          var w = this._w1.copy(dir).cross(u);
+          var offs = [[0, 0, 0], [u.x, u.y, u.z], [-u.x, -u.y, -u.z], [w.x, w.y, w.z], [-w.x, -w.y, -w.z]];
+          var best = null, fl = this.near(this.flyHit, head, 1.2);
+          this.raycaster.far = speed * dt + FLY_RADIUS;
+          for (var j = 0; j < offs.length; j++) {
+            this.raycaster.set(this._o.set(head.x + offs[j][0], head.y + offs[j][1], head.z + offs[j][2]), dir);
+            var hit = this.raycaster.intersectObjects(fl, false)[0];
+            if (hit && (!best || hit.distance < best.distance)) best = hit;
+          }
+          if (best && best.face) {
+            var n = best.face.normal.clone().transformDirection(best.object.matrixWorld);
+            var vn = vel.dot(n);
+            if (vn < 0) vel.addScaledVector(n, -vn);
+          }
+          rig.position.addScaledVector(vel, dt);
+        }
+        // keep above the floor below
+        this.cam.object3D.getWorldPosition(head);
+        var g = this.groundAt(head.x, head.z, head.y + 0.05);
+        var minY = (g !== null ? g : 0) + FLY_MIN_ALT;
+        if (head.y < minY) { rig.position.y += minY - head.y; if (vel.y < 0) vel.y = 0; }
+      },
+
+      // Hard stop at the edge of the building.
+      keepInside: function () {
+        var rig = this.el.object3D, head = this._h;
+        this.cam.object3D.getWorldPosition(head);
+        rig.position.x += clamp(head.x, -BX, BX) - head.x;
+        rig.position.z += clamp(head.z, -BZ, BZ) - head.z;
+        if (head.y > BY) { rig.position.y -= head.y - BY; if (this.vel.y > 0) this.vel.y = 0; }
+      },
+
+      stepWalk: function (dt) {
+        var rig = this.el.object3D, head = this._h;
+        this.cam.object3D.getWorldPosition(head);
+        var gy = this.groundAt(head.x, head.z, rig.position.y + MAX_STEP_UP + 0.1);
+        if (gy !== null) this.groundY = gy;
+        var base = Math.max(rig.position.y, this.groundY);
+        if (this.vel.lengthSq() > 0) {
+          var sx = this.vel.x * dt, sz = this.vel.z * dt;
+          // The wall test is the expensive part, so it runs every other frame and its answer is
+          // reused on the frame in between (movement per frame is only a few centimetres).
+          this.frame = (this.frame || 0) + 1;
+          if (this.frame % 2 === 0 || this.mv === undefined) {
+            this.nearS = this.near(this.solid, head, 0.75);
+            this.mv = this.passable(head, base, sx * 2, sz * 2) ? 3
+                    : (Math.abs(sx) > 1e-5 && this.passable(head, base, sx * 2, 0)) ? 1      // slide along walls
+                    : (Math.abs(sz) > 1e-5 && this.passable(head, base, 0, sz * 2)) ? 2 : 0;
+          }
+          if (this.mv & 1) rig.position.x += sx;
+          if (this.mv & 2) rig.position.z += sz;
+        } else this.mv = undefined;
+        // Follow the floor, and cap how fast you can drop or climb.
+        var st = (this.groundY - rig.position.y) * (1 - Math.exp(-12 * dt));
+        rig.position.y += Math.max(-6 * dt, Math.min(3 * dt, st));
+      },
+
+      // Back to the entrance. The museum model is thrown away and loaded again (frees its GPU memory).
+      reset: function () {
+        this.vel.set(0, 0, 0); this.yawRate = 0; this.mode = 'walk';
+        this.trig = this.keyTrig = this.sx = this.sy = 0;
+        var rig = this.el.object3D;
+        this.rotateRig(0);
+        rig.position.set(START[0], START[1], START[2]); this.groundY = 0;
+        var museum = $('museum'), mesh = museum.getObject3D('mesh');
+        if (mesh) disposeTree(mesh);
+        museum.removeAttribute('gltf-model');
+        this.all = []; this.solid = []; this.floors = []; this.flyHit = [];
+        T.Cache.clear();
+        var r = this.el.sceneEl.renderer;
+        if (r) { r.renderLists.dispose(); if (r.info.reset) r.info.reset(); }
+        statusEl.textContent = 'Reset: reloading the museum…'; statusEl.className = '';
+        setTimeout(function () { museum.setAttribute('gltf-model', MODEL_URL); }, 150);
+      }
+    });
+
+    // ---------------------------------------------------------------
+    // Reset dialog
+    // ---------------------------------------------------------------
+    function openDialog() {
+      var L = loco(), d = $('dialog');
+      if (!L || L.dialogOpen) return;
+      var cam = $('cam').object3D, p = new T.Vector3(), q = new T.Quaternion(), f = new T.Vector3(0, 0, -1);
+      cam.getWorldPosition(p); cam.getWorldQuaternion(q); f.applyQuaternion(q); f.y = 0;
+      if (f.lengthSq() < 1e-4) f.set(0, 0, -1);
+      f.normalize();
+      d.object3D.position.set(p.x + f.x * 1.4, p.y - 0.1, p.z + f.z * 1.4);
+      d.object3D.lookAt(p.x, p.y - 0.1, p.z);
+      d.object3D.visible = true;
+      L.dialogOpen = L.paused = true;
+      L.vel.set(0, 0, 0);
+      pointer(true);
+    }
+    function closeDialog() {
+      var L = loco(), d = $('dialog');
+      if (!L || !L.dialogOpen) return;
+      d.object3D.visible = false;
+      L.dialogOpen = L.paused = false;
+      pointer(false);
+    }
+    function resetAll() {
+      closeDialog();
+      loco().reset();
+    }
+
+    // ---- load status for the flat view ----
+    var statusEl = $('status');
+    var museumEl = $('museum');
+    function loaded() {
+      statusEl.textContent = 'Loaded. Space = trigger, arrows/WASD = thumbstick, F = walk/fly, R resets, P = board, E/Q = up/down when flying. In VR: tap Enter VR.';
+      statusEl.className = 'done';
+      var L = loco(); if (L) L.collect();
+    }
+    // The model can finish loading before this script runs (cached), so check first.
+    if (museumEl.getObject3D('mesh')) loaded();
+    museumEl.addEventListener('model-loaded', loaded);
+    museumEl.addEventListener('model-error', function () {
+      statusEl.textContent = 'Could not load museum.glb'; statusEl.className = 'error';
+    });
+    window.addEventListener('error', function (e) {
+      statusEl.textContent = 'Error: ' + e.message; statusEl.className = 'error';
+    });
+  </script>
+</body>
+</html>
