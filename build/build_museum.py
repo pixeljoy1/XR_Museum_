@@ -169,14 +169,18 @@ def add_strata(m, scale, strength):
 
 
 M = {}
-M['floor']     = mat('MD_floor', (0.016, 0.016, 0.019), rough=0.07)
+# The floor has to bake fully matte. A bake has no view direction, so any gloss makes every
+# texel reflect whatever is straight above it: under a big bright skylight the whole floor comes
+# back as an even grey picture of the ceiling. Matte and near-black gives the dark stone with
+# pools of light standing on it, which is what the building actually looks like.
+M['floor']     = mat('MD_floor', (0.026, 0.026, 0.030), rough=1.0)
 add_bricks(M['floor'], 1 / 1.6, 0.010, (0.038, 0.037, 0.035), row_h=1.0, brick_w=1.0, offset=0.0)
 M['stone']     = mat('MD_sandstone', (0.430, 0.330, 0.188), rough=0.86)
 add_bricks(M['stone'], 1 / 1.15, 0.008, (0.330, 0.255, 0.145), row_h=0.52, brick_w=0.78, offset=0.5, wall=True)
 M['stone2']    = mat('MD_sandstone_plain', (0.430, 0.330, 0.188), rough=0.86)
 add_noise(M['stone2'], 9, 5, 0.5, 0.86)
 M['travertine'] = mat('MD_travertine', (0.355, 0.120, 0.052), rough=0.42)
-add_strata(M['travertine'], 26, 1.0)
+add_strata(M['travertine'], 4.5, 1.0)
 M['teak']      = mat('MD_teak', (0.098, 0.033, 0.013), rough=0.42)
 add_noise(M['teak'], 40, 8, 0.45, 0.6)
 M['plaster']   = mat('MD_plaster', (0.80, 0.785, 0.755), rough=0.92)
@@ -185,8 +189,9 @@ M['brass']     = mat('MD_brass', (0.62, 0.44, 0.14), rough=0.35, metal=0.85)
 M['glass']     = mat('MD_glass', (0.75, 0.82, 0.86), rough=0.08)
 M['emit_warm'] = mat('MD_emit_warm', (0, 0, 0), emit=(1.0, 0.55, 0.22), emit_str=34.0)
 M['emit_cove'] = mat('MD_emit_cove', (0, 0, 0), emit=(1.0, 0.66, 0.34), emit_str=16.0)
+M['emit_up']   = mat('MD_emit_up', (0, 0, 0), emit=(1.0, 0.86, 0.68), emit_str=55.0)
 M['emit_sky']  = mat('MD_emit_sky', (0, 0, 0), emit=(0.80, 0.88, 1.0), emit_str=26.0)
-M['emit_dome'] = mat('MD_emit_dome', (0, 0, 0), emit=(1.0, 0.96, 0.88), emit_str=7.0)
+M['emit_dome'] = mat('MD_emit_dome', (0, 0, 0), emit=(1.0, 0.96, 0.88), emit_str=4.5)
 M['emit_slot'] = mat('MD_emit_slot', (0, 0, 0), emit=(1.0, 0.76, 0.46), emit_str=26.0)
 M['shell']     = mat('MD_shell', (0.02, 0.02, 0.02), rough=1.0)
 
@@ -454,6 +459,10 @@ for A in ALCOVE:
          [(a.x, a.y, H_ALC), (ab.x, ab.y, H_ALC), (bb.x, bb.y, H_ALC), (b.x, b.y, H_ALC)])
     # the wall above the alcove mouth, back up to the hall ceiling
     wall('SOLID_alc%d_head' % A['i'], M['stone2'], a, b, H_ALC, H_HALL, out=-1.0)
+    # a cove just inside the mouth, so the soffit overhead is not a black lid
+    mc = A['mid'] + n * 0.35
+    box('SOLID_alc%d_mouthcove' % A['i'], M['emit_cove'], (mc.x, mc.y, H_ALC - 0.22),
+        (CHAM - 0.8, 0.09, 0.09), rz=math.degrees(math.atan2(t.y, t.x)))
     # warm cove slots washing the back wall
     for s in (-1, 1):
         c = A['mid'] + n * (ALC_D - 0.12) + t * (s * (CHAM / 2 - 0.22))
@@ -464,6 +473,16 @@ for A in ALCOVE:
 ceiling_with_hole('SOLID_ceiling_hall', M['plaster'], [(p.x, p.y) for p in HALL],
                   H_HALL, 0, 0, SKY_A, SKY_B, n=96)
 dome('SOLID_skylight_hall', M['emit_dome'], 0, 0, SKY_A, SKY_B, H_HALL, SKY_DEPTH)
+
+# A concealed cove running the top of every hall wall, throwing light up at the ceiling. Without
+# it the ceiling is lit only by bounce off a near-black floor, and it bakes almost charcoal.
+for ei in range(3):
+    a, b = EDGES[ei]
+    dd = (b - a).normalized()
+    nrm = Vector((-dd.y, dd.x, 0))
+    c = (a + b) / 2 - nrm * 0.45
+    box('SOLID_cove_hall%d' % ei, M['emit_up'], (c.x, c.y, H_HALL - 0.34),
+        ((b - a).length - 0.3, 0.16, 0.26), rz=math.degrees(math.atan2(dd.y, dd.x)))
 
 
 log('hall ceiling done')
@@ -482,11 +501,14 @@ for s in (-1, 1):
     c = (p0 + p1) / 2 - nn * (WALL_T / 2)
     hmid = H_COR / 2
     cc = c + nn * (-math.sin(lean) * hmid)
-    ob = box('SOLID_cor_wall%d' % s, M['stone'], (cc.x, cc.y, hmid), (L, WALL_T, H_COR / math.cos(lean)))
-    # tip it about its own length so the top leans in over the walker (the splayed section of image 3)
+    ob = box('SOLID_cor_wall%d' % s, M['stone'], (cc.x, cc.y, hmid),
+             (L, WALL_T, H_COR / math.cos(lean)), rz=rz)
+    # tip it about its OWN length so the top leans in over the walker (the splayed section of
+    # image 3). Rotating about the global Y here would only work for a wall that already runs
+    # exactly north-south, and this one splays.
     pivot = Vector((cc.x, cc.y, hmid))
     ob.data.transform(Matrix.Translation(-pivot))
-    ob.data.transform(Matrix.Rotation(-lean * s, 4, 'Y'))
+    ob.data.transform(Matrix.Rotation(-lean * s, 4, Vector((d.x, d.y, 0)).normalized()))
     ob.data.transform(Matrix.Translation(pivot))
     # light slots: two rows, each column stepped so the pattern reads diagonally
     nslot = 7

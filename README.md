@@ -94,8 +94,26 @@ the Quest cache hard. Current: **1.01**.
 
 ## 6. Checked vs not yet checked
 
-Checked on desktop: the page loads with no JavaScript errors, the three pieces and the board
-render, the status line reports a missing model correctly.
+Checked on desktop, by driving the real components rather than moving the camera:
 
-Not yet checked: the walk route from the lobby to all three alcoves, flying up to the skylight,
-teleport validity on the museum floor, and anything at all on a headset.
+- Walks the whole route: start (z 25.2) through the lobby and corridor into the hall, stopping
+  against a bench at z 5.2. Collision, wall sliding and floor following all behave.
+- Fly: A toggles, climbing from 1.6 m rises through the skylight opening and stops at 7.9 m
+  inside the dome dish. You can fly up into the skylight, which is worth keeping.
+- Teleport: the arc lands on the floor and reports valid; 14 collision targets are collected
+  (11 room groups plus the three masterpiece blockers).
+- The page loads with no JavaScript errors and reports a missing model correctly.
+
+Not yet checked: **anything on a headset** - controller aim, trigger feel, frame rate, and
+whether the text on the board and the three labels is readable at the right distance.
+
+### Faults found by walking it, and fixed
+
+1. The corridor walls were built with a direct `box()` call that never got its rotation, so both
+   lay *across* the corridor as 12 m slabs and the route to the hall was blocked. They had also
+   made the corridor render black in every preview, which was misread as "a dark corridor".
+2. The hall ceiling bridged its two loops by arc length instead of by polar angle, so the ring
+   came out twisted and sealed the skylight over.
+3. The ashlar texture was mapped in plan, so walls showed vertical stripes instead of courses.
+4. The floor was baked glossy: a bake has no view direction, so every texel reflected the
+   skylight straight back and the whole floor came out an even grey.
