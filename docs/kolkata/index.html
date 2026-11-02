@@ -49,12 +49,12 @@
   </div>
   <div id="views" hidden><h2>Viewpoints</h2></div>
   <div id="keys" hidden>
-    <b>W A S D</b> walk &nbsp; <b>mouse</b> look &nbsp; <b>Shift</b> run &nbsp;
-    <b>F</b> walk/fly &nbsp; <b>E Q</b> up/down &nbsp;
-    <b>1...0</b> viewpoints &nbsp; <b>V</b> next view &nbsp; <b>R</b> reset &nbsp;
-    <b>L</b> shadows &nbsp; <b>T</b> run the trams<br>
-    <b>In VR</b> - left stick walk, right stick snap-turn, trigger run,
-    <b>A</b> walk/fly, <b>X</b> next viewpoint, <b>B</b>/<b>Y</b> reset.
+    <b>Space</b> or <b>trigger</b> walk where you aim &nbsp; <b>W A S D</b> / arrows stick &nbsp;
+    <b>F</b> walk/fly &nbsp; <b>E Q</b> up/down flying &nbsp; <b>R</b> reset &nbsp;
+    <b>1...0</b> viewpoints &nbsp; <b>V</b> next &nbsp; <b>T</b> trams &nbsp; <b>L</b> shadows<br>
+    <b>In VR</b> &mdash; right trigger walks where you point, right stick turns and walks,
+    <b>A</b> walk/fly, <b>B</b> or <b>Y</b> reset, <b>X</b> next viewpoint.
+    Flying: hold the trigger and point your wrist to steer, left stick for height.
   </div>
 
   <a-scene
@@ -83,21 +83,18 @@
     <a-entity id="city"></a-entity>
 
     <!-- The rig. The camera sits at eye height above it; the rig is what moves. -->
-    <a-entity id="rig" position="-25 0 4.6" street-rig>
+    <a-entity id="rig" position="-25 0 4.6" locomotion>
       <a-entity id="head" camera="near: 0.05; far: 265" position="0 1.62 0"
-                look-controls="pointerLockEnabled: true; magicWindowTrackingEnabled: true"
+                look-controls="pointerLockEnabled: false; magicWindowTrackingEnabled: true"
                 wasd-controls="enabled: false">
-        <a-entity id="helppanel" position="0 0 -1.15" visible="false">
-          <a-plane width="1.26" height="0.60" color="#0b0e12" opacity="0.86"
-                   material="shader: flat"></a-plane>
-          <a-text id="helptext" value="" align="center" width="1.15"
-                  color="#e8edf4" position="0 0 0.01"></a-text>
-        </a-entity>
+        <!-- the mode banner, so WALK / FLY / RESET reads in the headset too -->
+        <a-text id="modetxt" value="" align="center" width="1.1" color="#ffcf7a"
+                position="0 -0.34 -1.2" visible="false"></a-text>
       </a-entity>
-      <a-entity id="handL" meta-touch-controls="hand: left"
-                oculus-touch-controls="hand: left" vr-input="hand: left"></a-entity>
-      <a-entity id="handR" meta-touch-controls="hand: right"
-                oculus-touch-controls="hand: right" vr-input="hand: right"></a-entity>
+      <a-entity id="lhand" meta-touch-controls="hand: left"
+                oculus-touch-controls="hand: left"></a-entity>
+      <a-entity id="rhand" meta-touch-controls="hand: right"
+                oculus-touch-controls="hand: right"></a-entity>
     </a-entity>
   </a-scene>
 

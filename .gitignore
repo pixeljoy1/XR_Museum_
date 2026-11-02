@@ -12,3 +12,5 @@ build/build.log
 /kolkata_street/scene/_flat.blend*
 # Blender's rolling backups
 *.blend1
+# kolkata_street: the deploy folder make_web.sh builds
+/kolkata_street/dist/

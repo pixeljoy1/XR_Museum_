@@ -310,22 +310,57 @@ the "Old Tram" model that the cab front follows.
 
 ## Run it in the browser (WebXR)
 
-The street is also a WebXR page, in `docs/kolkata/`, alongside the museum floor.
-It works on a desktop browser and in a headset.
+**The primary deployment is Aritra's portfolio:**
+
+> **https://pixeljoy1.github.io/aritra-portfolio/kolkataStreetXR/**
+
+That is where this project is meant to be seen. Build the deploy folder and copy
+it across:
+
+```bash
+./build/make_web.sh                 # -> dist/kolkataStreetXR/   (8.6 MB, 28 files)
+cp -R dist/kolkataStreetXR <aritra-portfolio>/kolkataStreetXR
+```
+
+`make_web.sh` re-exports from Blender, so it is the one command to run after any
+change to the models or the street. It writes **self-contained glTF JSON** by
+default, because that is what the portfolio serves; pass `--glb` for the smaller
+binary form if the host handles `model/gltf-binary`.
+
+`docs/kolkata/` holds the same page for local work and as a second copy on this
+repo's own Pages site:
 
 ```bash
 cd docs && python3 -m http.server 4210
 # then open http://localhost:4210/kolkata/
 ```
 
-On GitHub Pages (serving `docs/`) it is at `<pages-url>/kolkata/`. WebXR needs
-HTTPS, which Pages provides; `localhost` is also treated as a secure context, so
-the desktop view works locally without a certificate.
+WebXR needs HTTPS, which Pages provides; `localhost` is also treated as a secure
+context, so the desktop view works locally without a certificate.
+
+### Movement
+
+Ported from **keralamHouseXR**, by way of this repo's own `docs/index.html`,
+whose README states it carries that movement unchanged. Same constants, same
+input mapping, same feel.
 
 | | |
 |---|---|
-| Desktop | `W A S D` walk, mouse look, `Shift` run, `F` walk/fly, `E`/`Q` up and down, `1`…`0` viewpoints, `V` next, `R` reset, `L` shadows, `T` run the trams |
-| Headset | left stick walk, right stick snap-turn, trigger run, `A` walk/fly, `X` next viewpoint, `B`/`Y` reset |
+| **Walk** | Right trigger walks where the controller points, level — pitch is ignored. Right stick turns you and also walks forward and back. Trigger on top of the stick adds up to +120% speed. |
+| **Fly** | `A` switches. Trigger glides ahead, stick back reverses, left stick (or `E`/`Q`) changes height, and with the trigger held you steer by pointing your wrist. |
+| **Buttons** | `A` walk/fly · `B` or `Y` reset · `X` next viewpoint |
+| **Desktop** | `Space` = trigger, `W A S D` / arrows = stick, `F` walk/fly, `R` reset, `E`/`Q` up and down flying, `1`…`0` viewpoints, `V` next, `T` trams, `L` shadows |
+
+One thing is **not** a port. The museum raycasts every mesh under `#world` to
+decide what blocks you, with a precomputed world box per mesh. This street is
+instanced — forty-five buildings share one geometry across a handful of
+`InstancedMesh`es — so per-mesh boxes do not exist, and a per-batch raycast
+would test the whole terrace at once. Instead each placement contributes an
+oriented footprint box, built from its model's own bounds as it loads, and the
+body test is circle-against-box over the few near you. Two boxes per asset:
+everything below 2.2 m for walking, so you pass under a tree's canopy and are
+stopped by its trunk, and the full height for flying, so you cannot fly through
+a third floor.
 
 The ten Blender cameras come through as **viewpoints** — the same positions,
 lenses and headings, listed down the right-hand side. That is the point of the
