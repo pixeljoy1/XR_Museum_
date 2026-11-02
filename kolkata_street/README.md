@@ -353,6 +353,25 @@ Measured in the browser:
 Instancing trades triangles for draw calls — a batch is culled as a unit — which
 is the right trade on a headset. `CHUNK_M` in `street.js` is the dial.
 
+### Hosting it somewhere that only serves known file types
+
+Some hosts serve only a fixed set of extensions, and `.glb` is often not one of
+them. `build/glb_to_json.py` rewrites each model as self-contained glTF JSON,
+with the binary buffer inlined as a base64 data URI:
+
+```bash
+python3 build/glb_to_json.py ../docs/kolkata/models /tmp/web/models
+```
+
+Base64 costs about a third more bytes (6.7 MB becomes 8.8 MB) and
+`THREE.GLTFLoader` parses it without caring what the file is called, because it
+sniffs the content rather than the name. Set `"asset_ext": ".json"` in that
+copy's `layout.json` and `street.js` picks it up; the repo keeps its `.glb`
+files and both copies stay one codebase.
+
+A-Frame is loaded from `cdn.jsdelivr.net` rather than `aframe.io` for the same
+reason — some hosts allow scripts only from a short list of CDNs.
+
 Three things are deliberately not carried over to the web build:
 
 - **Procedural materials.** glTF cannot hold them, so `export_web.py` walks each

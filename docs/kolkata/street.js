@@ -1,4 +1,4 @@
-/* Kolkata Street — WebXR.
+/* Kolkata Street - WebXR.
  *
  * Four components:
  *   street-environment  sky-and-ground environment map, so metal is not black
@@ -72,8 +72,8 @@
 
     init: function () {
       var self = this;
-      var url = this.data.src + '?v=' + VERSION;
-      say('Loading layout…');
+      var url = this.data.src;
+      say('Loading layout...');
       fetch(url).then(function (r) {
         if (!r.ok) { throw new Error(url + ' -> HTTP ' + r.status); }
         return r.json();
@@ -85,7 +85,7 @@
         self.place(models);
       }).catch(function (e) {
         say('Could not build the street: ' + e.message +
-            ' — are you serving this over http? (cd docs/kolkata && ' +
+            ' - are you serving this over http? (cd docs/kolkata && ' +
             'python3 -m http.server 4211)', true);
       });
     },
@@ -94,13 +94,18 @@
     loadAssets: function (names) {
       var loader = new THREE.GLTFLoader();
       var done = 0, total = names.length;
+      // Some static hosts serve only a fixed set of file types and .glb is not
+      // always one, so layout.json can ask for self-contained .json glTF
+      // instead. GLTFLoader sniffs the content, not the name.
+      var ext = (this.layout && this.layout.asset_ext) || '.glb';
       return Promise.all(names.map(function (name) {
         return new Promise(function (resolve, reject) {
-          loader.load('models/' + name + '.glb?v=' + VERSION, function (gltf) {
-            say('Loading models… ' + (++done) + '/' + total);
+          loader.load('models/' + name + ext, function (gltf) {
+            say('Loading models... ' + (++done) + '/' + total);
             resolve([name, gltf.scene]);
           }, undefined, function (err) {
-            reject(new Error('models/' + name + '.glb: ' + (err.message || err)));
+            reject(new Error('models/' + name + ext + ': ' +
+                             (err.message || err)));
           });
         });
       })).then(function (pairs) {
@@ -163,7 +168,7 @@
 
       this.el.sceneEl.walkables = walk;
       this.el.sceneEl.trams = trams;
-      say('Kolkata street — ' + L.instances.length + ' placements in ' +
+      say('Kolkata street - ' + L.instances.length + ' placements in ' +
           calls + ' batches. Click to look around.');
       setTimeout(function () {
         hud.style.transition = 'opacity 1.2s';
@@ -359,7 +364,7 @@
       // hand-span above the road, the balcony, the one up among the wires --
       // otherwise ground-following snaps them all back to 1.62 m.
       this.fly = (v.pos[1] < 1.15 || v.pos[1] > 2.6);
-      say(v.label + ' — ' + v.lens + ' mm. ' + v.note);
+      say(v.label + ' - ' + v.lens + ' mm. ' + v.note);
       hud.style.opacity = '1';
       this.help();
     },
