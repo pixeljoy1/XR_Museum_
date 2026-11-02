@@ -6,6 +6,8 @@
 #                                          host that serves model/gltf-binary)
 #   ./build/make_web.sh --back ../experiences/kolkata-street-vr/
 #                                       -> show a link back to the host page
+#   ./build/make_web.sh --cdn           -> load A-Frame from a CDN instead of
+#                                          vendoring it (default is to vendor)
 #
 # The primary deployment is Aritra's portfolio:
 #   https://pixeljoy1.github.io/aritra-portfolio/kolkataStreetXR/
@@ -26,13 +28,17 @@ fi
 [ -n "$BLENDER" ] || { echo "Blender not found. Set BLENDER=/path/to/blender" >&2; exit 1; }
 
 USE_GLB=0
+VENDOR=1
 BACK=""
 prev=""
 for a in "$@"; do
   [ "$a" = "--glb" ] && USE_GLB=1
+  [ "$a" = "--cdn" ] && VENDOR=0
   [ "$prev" = "--back" ] && BACK="$a"
   prev="$a"
 done
+AFRAME_VER=1.7.0
+AFRAME_CDN="https://cdn.jsdelivr.net/npm/aframe@${AFRAME_VER}/dist/aframe.min.js"
 
 OUT="dist/kolkataStreetXR"
 rm -rf "$OUT"
@@ -48,6 +54,27 @@ cp ../docs/kolkata/index.html       "$OUT/index.html"
 # The host page can wrap this one. --back <href> turns on the link back to it;
 # the page itself reads data-back off the scene, so the host never has to keep
 # a patched copy of index.html that the next deploy would overwrite.
+# A third-party script is one more thing that can be down when someone picks up
+# the headset. The spec's own rule is to avoid third-party requests and
+# self-host (it says it of fonts; the same argument applies here), so by default
+# A-Frame is vendored next to the page and the tag is rewritten to point at it.
+if [ "$VENDOR" = "1" ]; then
+  mkdir -p "$OUT/vendor"
+  if curl -fsS -o "$OUT/vendor/aframe-${AFRAME_VER}.min.js" "$AFRAME_CDN"; then
+    python3 - "$OUT/index.html" "$AFRAME_CDN" "vendor/aframe-${AFRAME_VER}.min.js" <<'PY'
+import sys
+p, cdn, local = sys.argv[1], sys.argv[2], sys.argv[3]
+s = open(p).read()
+assert cdn in s, 'A-Frame script tag not found: ' + cdn
+open(p, 'w').write(s.replace(cdn, local))
+PY
+    echo "A-Frame vendored -> vendor/aframe-${AFRAME_VER}.min.js ($(du -h "$OUT/vendor/aframe-${AFRAME_VER}.min.js" | cut -f1))"
+  else
+    echo "WARNING: could not fetch A-Frame; the page will load it from the CDN" >&2
+    rmdir "$OUT/vendor" 2>/dev/null || true
+  fi
+fi
+
 if [ -n "$BACK" ]; then
   python3 - "$OUT/index.html" "$BACK" <<'PY'
 import sys
