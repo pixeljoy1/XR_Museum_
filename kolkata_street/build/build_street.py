@@ -123,8 +123,9 @@ def build_road(coll):
                       auto_angle=20.0)
     # the cross street the terrace runs into, so the view down the road lands on
     # ground rather than on the sky
-    M.plane((150, 150), (ST['X_END'] + 60, 0, 0.02), name='far_ground', coll=coll,
-            mat=MAT['asphalt'])
+    # WALK_ so the locomotion module treats it as standable rather than a wall
+    M.plane((150, 150), (ST['X_END'] + 60, 0, 0.02), name='WALK_far_ground',
+            coll=coll, mat=MAT['asphalt'])
     return road
 
 

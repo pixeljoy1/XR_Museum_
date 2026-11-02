@@ -340,53 +340,67 @@ context, so the desktop view works locally without a certificate.
 
 ### Movement
 
-Ported from **keralamHouseXR**, by way of this repo's own `docs/index.html`,
-whose README states it carries that movement unchanged. Same constants, same
-input mapping, same feel.
+Movement is **`xr-locomotion.js`, used unmodified** — the standalone module from
+`XR_Locomotion/locomotion/`, v1.13 behaviour out of keralamHouseXR. It is
+vendored at `docs/kolkata/xr-locomotion.js`; its own guide and the design spec
+are in `refs/`. Do not fork it: fix it upstream and re-copy.
+
+The module owns the player. It builds the rig, the camera, both Touch
+controllers, the black fade, the mode text, the fly readout and the reset
+dialog, so **this page adds no camera and no controllers of its own**:
+
+```html
+<a-scene xr-locomotion="world: #world; start: -25 0 4.6; bounds: 160 44; ceiling: 34">
+```
 
 | | |
 |---|---|
-| **Walk** | Right trigger walks where the controller points, level — pitch is ignored. Right stick turns you and also walks forward and back. Trigger on top of the stick adds up to +120% speed. |
-| **Fly** | `A` switches. Trigger glides ahead, stick back reverses, left stick (or `E`/`Q`) changes height, and with the trigger held you steer by pointing your wrist. |
-| **Buttons** | `A` walk/fly · `B` or `Y` reset · `X` next viewpoint |
-| **Desktop** | `Space` = trigger, `W A S D` / arrows = stick, `F` walk/fly, `R` reset, `E`/`Q` up and down flying, `1`…`0` viewpoints, `V` next, `T` trams, `L` shadows |
+| **Quest** | Right stick walk and turn. Right trigger walks where the hand points, harder is faster. Left stick forward teleports. **A** walk/fly, **B** or **Y** reset dialog, **X** next viewpoint. Flying: right trigger glides, left trigger or right stick back reverses, tilt the right hand while a trigger is held to climb or dive, left stick for height, wrist steers. |
+| **Desktop** | `Space` trigger, `WASD` stick, `Shift` reverse, `E`/`Q` up and down, `F` walk/fly, `R` reset, `Esc` close. Plus this page's own: `1`…`0` viewpoints, `V` next, `T` trams, `L` shadows, `I` input monitor. |
 
-One thing is **not** a port. The museum raycasts every mesh under `#world` to
-decide what blocks you, with a precomputed world box per mesh. This street is
-instanced — forty-five buildings share one geometry across a handful of
-`InstancedMesh`es — so per-mesh boxes do not exist, and a per-batch raycast
-would test the whole terrace at once. Instead each placement contributes an
-oriented footprint box, built from its model's own bounds as it loads, and the
-body test is circle-against-box over the few near you. Two boxes per asset:
-everything below 2.2 m for walking, so you pass under a tree's canopy and are
-stopped by its trunk, and the full height for flying, so you cannot fly through
-a third floor.
+### Meeting the module's world contract
 
-The ten Blender cameras come through as **viewpoints** — the same positions,
-lenses and headings, listed down the right-hand side. That is the point of the
-project: jump between them, then walk off and find your own.
+The module's contract is that every mesh under `world` is collision geometry,
+`WALK_*` is standable and everything else blocks. The visible city **cannot**
+meet that contract: it is drawn with `InstancedMesh`, so forty-five buildings
+share one geometry across a handful of batches, and the per-mesh world box the
+module caches to cull its raycasts does not exist for any single building.
 
-### How it is put together
+So the scene is split:
 
-`build/export_web.py` writes one GLB per asset plus a `layout.json` of
-placements — the same "model once, instance many" idea as the Blender scene. The
-page fetches and parses each GLB **once** and batches the placements into
-`THREE.InstancedMesh`, chunked along the street so frustum culling still works.
+- **`#world`** — the ground GLB (`WALK_road`, `WALK_footpath`,
+  `WALK_far_ground` are standable; `SOLID_track` blocks) plus **one invisible
+  proxy box per placement**, 117 of them, sized from that model's own bounds as
+  it loads. The footprint is taken from the geometry **below 2.2 m** and run up
+  to the model's full height, so you walk under a tree's canopy and are stopped
+  by its trunk, and under a hoarding but not through its legs.
+- **`#city`** — everything you see, outside the collision world.
 
-That matters more than it sounds. Pointing 118 `<a-entity gltf-model>` tags at
-the same files parses every file again for every placement, and a terrace of
-forty-five buildings becomes over a thousand draw calls looking down the street.
-Measured in the browser:
+`street.js` calls `collect()` on the module once the city is placed, because
+everything arrives after the module has loaded.
 
-| | draw calls | triangles/frame |
-|---|---|---|
-| a clone per placement | 1040 | 743k |
-| + one palette per building | 913 | 744k |
-| + merge look-alike materials on export | 874 | 736k |
-| + instanced batches, chunked | **327** | 866k |
+### When a behaviour does not work on the headset
 
-Instancing trades triangles for draw calls — a batch is culled as a unit — which
-is the right trade on a headset. `CHUNK_M` in `street.js` is the dial.
+The Quest browser has no console, so press **`I`** (or add `?diag=1`) for a live
+input monitor. It reports both what the module sees and what the raw WebXR
+gamepads report:
+
+```
+vr      yes          mode    walk
+trigger R 0.62  L 0.00        stick R 0.00 -0.80  L 0.00
+floors  4    solid 121        rig  -25.0 0.1 7.6
+sources 2
+  left  ax 0.0,0.0,0.0,-0.8   bt 0v000
+  right ax 0.0,0.0,0.6,0.0    bt v0001
+```
+
+That distinguishes the three failures that look identical from inside a headset:
+**`sources 0`** means WebXR is not handing over the controllers at all;
+**gamepad axes moving while `stick` stays 0** means the controller component is
+not emitting events, in which case try adding `meta-touch-controls` beside
+`oculus-touch-controls` on the module's hands; **both moving while nothing
+happens** means the module is reading input but something downstream is wrong —
+check `floors`, because zero standable meshes means you have nothing to walk on.
 
 ### Hosting it somewhere that only serves known file types
 

@@ -31,7 +31,8 @@ MODELS = os.path.join(WEB, 'models')
 os.makedirs(MODELS, exist_ok=True)
 S.log_to(os.path.join(S.ROOT, 'build', 'export_web.log'))
 
-GROUND = ['WALK_road', 'SOLID_track', 'WALK_footpath', 'far_ground', 'overhead']
+GROUND = ['WALK_road', 'SOLID_track', 'WALK_footpath', 'WALK_far_ground',
+          'overhead']
 MID_GREY = (0.5, 0.5, 0.5)
 
 

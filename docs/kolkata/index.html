@@ -3,59 +3,63 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Kolkata Street - WebXR</title>
-  <!-- Pinned A-Frame release, same one the museum floor uses.
-       WebXR needs HTTPS; GitHub Pages provides it. -->
-  <script src="https://aframe.io/releases/1.7.0/aframe.min.js"></script>
+  <title>Kolkata Street — WebXR</title>
+  <!-- Pinned A-Frame release, the one xr-locomotion is written against. -->
+  <script src="https://cdn.jsdelivr.net/npm/aframe@1.7.0/dist/aframe.min.js"></script>
   <style>
-    html, body { margin: 0; background: #0b0c0e; }
-    #hud { position: fixed; left: 12px; top: 12px; z-index: 10; padding: 8px 12px;
-           font: 13px/1.45 system-ui, -apple-system, sans-serif; color: #fff;
-           background: rgba(10,12,16,.72); border-radius: 8px; max-width: 42ch;
-           pointer-events: none; }
+    html, body { margin: 0; height: 100%; background: #0b0c0e; color: #f2f5f9;
+                 font: 13px/1.45 system-ui, -apple-system, sans-serif; }
+    .panel { position: fixed; z-index: 10; background: rgba(10,12,16,.74);
+             border-radius: 8px; }
+    #hud { left: 12px; top: 12px; padding: 8px 12px; max-width: 42ch;
+           pointer-events: none; white-space: pre-line; }
     #hud.error { background: #8d1b16; }
-    #hud b { color: #ffcf7a; font-weight: 600; }
-    #views { position: fixed; right: 12px; top: 12px; z-index: 10; width: 260px;
-             font: 12px/1.4 system-ui, sans-serif; color: #fff;
-             background: rgba(10,12,16,.72); border-radius: 8px; overflow: hidden; }
-    #views h2 { margin: 0; padding: 8px 12px 6px; font-size: 12px; letter-spacing: .06em;
-                text-transform: uppercase; color: #ffcf7a; font-weight: 600; }
-    #views button { display: block; width: 100%; text-align: left; padding: 6px 12px;
-                    font: inherit; color: #fff; background: none; border: 0;
-                    border-top: 1px solid rgba(255,255,255,.08); cursor: pointer; }
-    #views button:hover { background: rgba(255,255,255,.12); }
-    #views button span { color: #9aa6b4; }
-    #keys { position: fixed; left: 12px; bottom: 12px; z-index: 10; padding: 8px 12px;
-            font: 12px/1.5 system-ui, sans-serif; color: #c7cdd6;
-            background: rgba(10,12,16,.72); border-radius: 8px; max-width: 54ch; }
-    #keys b { color: #fff; }
-    #prog { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%);
-            z-index: 11; width: min(340px, 72vw); padding: 14px 16px 16px;
-            background: rgba(10,12,16,.82); border-radius: 10px;
-            font: 13px/1.4 system-ui, sans-serif; color: #fff; text-align: center; }
+    #prog { left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 11;
+            width: min(340px, 72vw); padding: 14px 16px 16px; text-align: center;
+            background: rgba(10,12,16,.82); border-radius: 10px; }
     #prog-label { margin-bottom: 10px; }
-    #prog-track { height: 4px; background: rgba(255,255,255,.16); border-radius: 2px;
-                  overflow: hidden; }
+    #prog-track { height: 4px; background: rgba(255,255,255,.16);
+                  border-radius: 2px; overflow: hidden; }
     #prog-fill { height: 100%; width: 1%; background: #ffcf7a; border-radius: 2px;
                  transition: width .25s ease; }
-    @media (max-width: 760px) { #views, #keys { display: none; } }
+    #views { right: 12px; top: 56px; width: 254px; font-size: 12px;
+             overflow: hidden auto; max-height: calc(100% - 72px); }
+    #views h2 { margin: 0; padding: 9px 12px 7px; font-size: 11px;
+                letter-spacing: .07em; text-transform: uppercase; color: #ffcf7a; }
+    #views button { display: block; width: 100%; text-align: left; padding: 7px 12px;
+                    font: inherit; color: #f2f5f9; background: none; border: 0;
+                    border-top: 1px solid rgba(255,255,255,.09); cursor: pointer; }
+    #views button:hover, #views button:focus-visible { background: rgba(255,255,255,.13); }
+    #views button span { color: #9aa6b4; }
+    #keys { left: 12px; bottom: 12px; right: 12px; max-width: 62ch; padding: 9px 12px;
+            font-size: 12px; line-height: 1.55; color: #c7cdd6; }
+    #keys b { color: #fff; }
+    /* Live controller readout. The Quest browser has no console, so when a
+       behaviour does not work on the headset this is the only way to see
+       whether the events are arriving at all. Press I, or add ?diag=1. */
+    #diag { right: 12px; bottom: 12px; width: 268px; padding: 9px 12px;
+            font: 11px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+            color: #9fe3ff; white-space: pre; }
+    @media (max-width: 760px) { #views { display: none; } }
   </style>
 </head>
 <body>
-  <div id="hud">Loading the street...</div>
+  <div id="hud" class="panel">Loading the street...</div>
   <div id="prog" hidden>
     <div id="prog-label">Loading the street</div>
     <div id="prog-track"><div id="prog-fill"></div></div>
   </div>
-  <div id="views" hidden><h2>Viewpoints</h2></div>
-  <div id="keys" hidden>
-    <b>Space</b> or <b>trigger</b> walk where you aim &nbsp; <b>W A S D</b> / arrows stick &nbsp;
-    <b>F</b> walk/fly &nbsp; <b>E Q</b> up/down flying &nbsp; <b>R</b> reset &nbsp;
-    <b>1...0</b> viewpoints &nbsp; <b>V</b> next &nbsp; <b>T</b> trams &nbsp; <b>L</b> shadows<br>
-    <b>In VR</b> &mdash; right trigger walks where you point, right stick turns and walks,
-    <b>A</b> walk/fly, <b>B</b> or <b>Y</b> reset, <b>X</b> next viewpoint.
-    Flying: hold the trigger and point your wrist to steer, left stick for height.
+  <div id="views" class="panel" hidden><h2>Viewpoints</h2></div>
+  <div id="keys" class="panel" hidden>
+    <b>Space</b> trigger &nbsp; <b>WASD</b> stick &nbsp; <b>Shift</b> reverse &nbsp;
+    <b>E Q</b> up/down &nbsp; <b>F</b> walk/fly &nbsp; <b>R</b> reset &nbsp;
+    <b>1...0</b> viewpoints &nbsp; <b>V</b> next &nbsp; <b>T</b> trams &nbsp;
+    <b>I</b> input monitor<br>
+    <b>Quest</b> &mdash; right stick walk and turn; right trigger walks where the hand
+    points; left stick forward teleports. <b>A</b> walk/fly, <b>B</b> or <b>Y</b> reset,
+    <b>X</b> next viewpoint.
   </div>
+  <div id="diag" class="panel" hidden></div>
 
   <a-scene
       renderer="colorManagement: true; antialias: true; toneMapping: ACESFilmic;
@@ -64,11 +68,11 @@
       background="color: #d7dde4"
       street-environment
       city-builder="src: layout.json"
-      vr-mode-ui="enterVRButton: #enterVR"
-      shadow="type: pcfsoft">
+      shadow="type: pcfsoft"
+      xr-locomotion="world: #world; start: -25 0 4.6; bounds: 160 44; ceiling: 34">
 
-    <!-- Monsoon overcast: a big soft key from the north-west and a strong sky fill.
-         Matches the Blender sun at 56 deg from vertical, 118 deg round. -->
+    <!-- Monsoon overcast: a big soft key from the north-west and a strong sky
+         fill. Matches the Blender sun at 56 deg from vertical, 118 deg round. -->
     <a-entity light="type: hemisphere; color: #d8e1ec; groundColor: #4c463c;
                      intensity: 2.2"></a-entity>
     <a-entity id="sun"
@@ -79,25 +83,21 @@
                      shadowCameraFar: 220; shadowBias: -0.0012"
               position="73 56 -39"></a-entity>
 
-    <!-- Everything placed from layout.json goes in here. -->
-    <a-entity id="city"></a-entity>
+    <!-- Collision only. The ground (WALK_road, WALK_footpath, WALK_far_ground)
+         is standable; one invisible proxy box per placement blocks you. The
+         VISIBLE city is #city, outside this entity, because it is drawn with
+         InstancedMesh and a per-instance raycast against a batch is not a thing
+         the module can do. -->
+    <a-entity id="world"></a-entity>
 
-    <!-- The rig. The camera sits at eye height above it; the rig is what moves. -->
-    <a-entity id="rig" position="-25 0 4.6" locomotion>
-      <a-entity id="head" camera="near: 0.05; far: 265" position="0 1.62 0"
-                look-controls="pointerLockEnabled: false; magicWindowTrackingEnabled: true"
-                wasd-controls="enabled: false">
-        <!-- the mode banner, so WALK / FLY / RESET reads in the headset too -->
-        <a-text id="modetxt" value="" align="center" width="1.1" color="#ffcf7a"
-                position="0 -0.34 -1.2" visible="false"></a-text>
-      </a-entity>
-      <a-entity id="lhand" meta-touch-controls="hand: left"
-                oculus-touch-controls="hand: left"></a-entity>
-      <a-entity id="rhand" meta-touch-controls="hand: right"
-                oculus-touch-controls="hand: right"></a-entity>
-    </a-entity>
+    <!-- Everything you see. Not collision geometry. -->
+    <a-entity id="city"></a-entity>
   </a-scene>
 
-  <script src="street.js?v=1.01"></script>
+  <!-- The locomotion module builds the rig, both Touch controllers, the fade,
+       the mode text, the fly readout and the reset dialog. Do not add a camera
+       or controllers here: it owns them. -->
+  <script src="xr-locomotion.js?v=1.13"></script>
+  <script src="street.js?v=1.02"></script>
 </body>
 </html>

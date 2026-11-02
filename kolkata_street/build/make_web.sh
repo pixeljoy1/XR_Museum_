@@ -36,8 +36,9 @@ echo "=== flattening the scene (append, so nothing is a library link) ==="
 echo "=== exporting models and layout ==="
 "$BLENDER" -b scene/_flat.blend -P build/export_web.py
 
-cp ../docs/kolkata/index.html "$OUT/index.html"
-cp ../docs/kolkata/street.js  "$OUT/street.js"
+cp ../docs/kolkata/index.html       "$OUT/index.html"
+cp ../docs/kolkata/street.js        "$OUT/street.js"
+cp ../docs/kolkata/xr-locomotion.js "$OUT/xr-locomotion.js"
 
 if [ "$USE_GLB" = "1" ]; then
   cp ../docs/kolkata/models/*.glb "$OUT/models/"
