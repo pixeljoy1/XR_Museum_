@@ -9,7 +9,9 @@ Built with Blender 4.2 LTS, headless, from Python. There are no image textures
 and no downloaded assets: every material is procedural, so the `.blend` files are
 self-contained and open the same on any machine.
 
-![the tram](renders/tram_3q.png)
+![the street](gallery/street.png)
+
+*`SHOT_02_wet_wide` — 24 mm, standing in the road.*
 
 ## Layout
 
@@ -117,10 +119,11 @@ The build reports its own envelope, so a change that breaks the dimensions is
 visible in the log:
 
 ```
-tram bounds  L=18.190 (body 17.370)  W=2.354 (body 2.134)  H=5.774 incl. pole
+tram bounds  L=18.025 (body 17.370)  W=2.354 (body 2.134)  H=5.774 incl. pole
+tris=25148  materials=18
 ```
 
-The body is 17.37 m; the lifeguard trays add about 0.4 m at each end, the
+The body is 17.37 m; the lifeguard trays add about 0.33 m at each end, the
 footboards 0.11 m each side, and the height is to the trolley wheel in running
 position, which is where the wire is.
 
@@ -146,9 +149,9 @@ Hindustan kept building at Uttarpara until 2014.
 
 | | published | built |
 |---|---|---|
-| Length | 4,325 mm | 4,344 over bumpers |
-| Width | 1,662 mm | 1,676 over the body |
-| Height | 1,600 mm | 1,603 roof above the road |
+| Length | 4,325 mm | 4,329 over bumpers (body alone 4,149) |
+| Width | 1,662 mm | 1,676 over the body, 1,801 over the mirrors |
+| Height | 1,600 mm | 1,603 roof above the road, 1,804 over the TAXI box |
 | Wheelbase | 2,464 mm | 2,464 |
 | Ground clearance | 155 mm | 155 |
 
@@ -276,6 +279,18 @@ world space.
 - The interiors are furnished enough to read through glass and no further.
 - Nothing is animated except the dolly camera. The trams and taxis are placed,
   not driven.
+
+## Gallery
+
+`gallery/` holds the few images the README shows. `renders/` is build output and
+is not in version control — run `build/render.py` and it fills up again.
+
+| | |
+|---|---|
+| ![tram nose](gallery/tram_nose.png) | ![telephoto](gallery/telephoto.png) |
+| `SHOT_01_tram_nose`, 85 mm | `SHOT_03_telephoto_vista`, 200 mm |
+| ![the tram](gallery/tram.png) | ![the taxi](gallery/taxi.png) |
+| the tram, three-quarter | the taxi, three-quarter |
 
 ## References
 

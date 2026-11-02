@@ -4,5 +4,7 @@
 build/bake_*.jpg
 build/build.log
 
-# kolkata_street: build logs and generated preview renders
+# kolkata_street: build logs, and renders/ which is build output.
+# The few images the README shows live in kolkata_street/gallery/ and are kept.
 /kolkata_street/build/*.log
+/kolkata_street/renders/
