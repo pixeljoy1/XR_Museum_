@@ -254,9 +254,12 @@
         var xrl = self.el.sceneEl.components['xr-locomotion'];
         if (xrl) { xrl.collect(); }
         self.el.sceneEl.setAttribute('traffic', '');
+        self.el.sceneEl.setAttribute('quest-input', '');
+        self.el.sceneEl.setAttribute('daynight', '');
         document.getElementById('views').hidden = false;
         document.getElementById('keys').hidden = false;
         buildViewMenu(L.viewpoints);
+        buildPanel();
         hostChrome();
         pageKeys();
         diagnostics();
@@ -575,6 +578,257 @@
     }
   });
 
+  // ---------------------------------------------------------------- Quest input
+  //
+  // Why this exists. xr-locomotion binds `oculus-touch-controls`, which maps the
+  // WebXR profiles oculus-touch, -v2 and -v3. A Quest 3 reports its controllers
+  // as `meta-quest-touch-plus`, which that component does not match -- so it
+  // never binds, no events are emitted, and every control is dead while the
+  // scene itself renders perfectly. That is exactly the "launches fine, nothing
+  // works" symptom.
+  //
+  // Rather than fork the module, this reads the raw WebXR gamepads every frame
+  // and writes the same fields the module's own handlers would. Analog values
+  // are plain assignment, so if the A-Frame component DOES bind on some other
+  // headset the two agree. Buttons are edge-detected here and suppressed the
+  // moment a native A-Frame button event is seen, so nothing fires twice.
+  //
+  // xr-standard gamepad mapping: buttons 0 trigger, 1 squeeze, 3 stick press,
+  // 4 A/X, 5 B/Y; axes 2,3 are the stick (0,1 on older runtimes).
+  AFRAME.registerComponent('quest-input', {
+    init: function () {
+      var self = this;
+      this.native = false;
+      this.prev = { left: [], right: [] };
+      ['abuttondown', 'bbuttondown', 'xbuttondown', 'ybuttondown'].forEach(function (ev) {
+        self.el.addEventListener(ev, function () { self.native = true; }, true);
+      });
+      this.el.addEventListener('enter-vr', function () {
+        setTimeout(function () { self.report(); }, 600);
+      });
+    },
+
+    report: function () {
+      var ss = this.session();
+      if (!ss) { return; }
+      var names = [];
+      for (var i = 0; i < ss.inputSources.length; i++) {
+        names.push(ss.inputSources[i].handedness + ':' +
+                   (ss.inputSources[i].profiles || []).slice(0, 2).join('/'));
+      }
+      say('VR controllers: ' + (names.join('  ') || 'none reported') +
+          (this.native ? '\n(A-Frame controller events are live)'
+                       : '\n(reading the gamepads directly)'));
+      hud.style.opacity = '1';
+    },
+
+    session: function () {
+      var xr = this.el.renderer && this.el.renderer.xr;
+      return (xr && xr.getSession && xr.getSession()) || null;
+    },
+
+    tick: function () {
+      var ss = this.session();
+      if (!ss || !ss.inputSources) { return; }
+      var M = loco();
+      if (!M) { return; }
+      for (var i = 0; i < ss.inputSources.length; i++) {
+        var src = ss.inputSources[i], gp = src.gamepad;
+        if (!gp || !gp.buttons) { continue; }
+        var right = src.handedness === 'right';
+        var b = gp.buttons, ax = gp.axes || [];
+        var sx = ax.length > 2 ? ax[2] : (ax[0] || 0);
+        var sy = ax.length > 3 ? ax[3] : (ax[1] || 0);
+        var trig = b[0] ? b[0].value : 0;
+        var grip = b[1] ? b[1].value : 0;
+
+        if (right) { M.trig = trig; M.sx = sx; M.sy = sy; M.gDn = grip; }
+        else { M.ltrig = trig; M.ls = sy; M.gUp = grip; }
+
+        // button edges
+        var prev = this.prev[src.handedness] || [];
+        for (var k = 0; k < b.length; k++) {
+          var now = b[k].pressed, was = !!prev[k];
+          if (now && !was) { this.pressed(right, k, M); }
+          prev[k] = now;
+        }
+        this.prev[src.handedness] = prev;
+      }
+    },
+
+    pressed: function (right, k, M) {
+      // The stick click is not used by the module, so it is free for the two
+      // scene settings -- the only way to reach them without a keyboard.
+      if (k === 3) {
+        var scene = this.el.components;
+        if (right && scene.daynight) { scene.daynight.toggle(); }
+        if (!right && scene.daynight) { scene.daynight.toggleWet(); }
+        return;
+      }
+      if (this.native) { return; }          // A-Frame is already delivering these
+      if (right && k === 4) { M.toggleMode(); }
+      else if (right && k === 5) { M.openDialog(); }
+      else if (!right && k === 4) { goToView((document.querySelector('a-scene').viewIndex || 0) + 1); }
+      else if (!right && k === 5) { M.openDialog(); }
+    }
+  });
+
+  // ---------------------------------------------------------------- day / night
+  //
+  // The reflections in the road are the point of the whole scene, so the
+  // environment map is BAKED FROM THE CITY rather than being the flat gradient
+  // the page starts with: one cube render from the middle of the street, run
+  // through PMREM. After that the wet road and the chrome reflect actual
+  // buildings and trams, which a gradient cannot do, and it costs nothing per
+  // frame. It is re-baked when the light changes.
+  var LOOK = {
+    day: {
+      sky: '#d7dde4', fog: '#ccd3dc', fogNear: 26, fogFar: 235,
+      hemi: { color: '#d8e1ec', ground: '#4c463c', intensity: 2.2 },
+      sun: { color: '#fff4e4', intensity: 2.1, pos: '73 56 -39' },
+      env: [[0xd9, 0xe0, 0xe8], [0xc6, 0xcb, 0xd1], [0x3b, 0x37, 0x31]],
+      lamp: 0.12, shop: 0.25, window: 0.0, envI: 1.0
+    },
+    night: {
+      sky: '#0a0e15', fog: '#0c1019', fogNear: 10, fogFar: 150,
+      hemi: { color: '#36425c', ground: '#2a2015', intensity: 1.05 },
+      sun: { color: '#93a9cf', intensity: 0.35, pos: '-60 70 44' },
+      env: [[0x16, 0x1d, 0x2b], [0x22, 0x24, 0x2e], [0x0c, 0x0c, 0x0e]],
+      lamp: 1.0, shop: 1.2, window: 1.0, envI: 0.8
+    }
+  };
+  // Materials whose emission is a light rather than a surface.
+  var LAMP_RE = /lamp|taillight|dest|neon|taxi_sign/i;
+  var SHOP_RE = /shopglow/i;
+  var WINDOW_RE = /city_glass/i;
+  var ROAD_RE = /^WALK_road|^SOLID_track/;
+
+  AFRAME.registerComponent('daynight', {
+    schema: { mode: { default: 'day' }, wet: { default: true } },
+
+    init: function () {
+      this.mats = null;
+      this.el.addEventListener('city-ready', this.apply.bind(this));
+    },
+
+    collectMats: function () {
+      var lamps = [], shops = [], windows = [], roads = [], seen = {};
+      this.el.object3D.traverse(function (o) {
+        if (!o.isMesh) { return; }
+        var isRoad = ROAD_RE.test(o.name || '');
+        var ms = Array.isArray(o.material) ? o.material : [o.material];
+        ms.forEach(function (m) {
+          if (!m || seen[m.uuid]) { return; }
+          seen[m.uuid] = 1;
+          if (isRoad) { roads.push(m); m.userData.dryRough = 0.62; return; }
+          var n = m.name || '';
+          // m.emissive is a Color and m.emissiveIntensity defaults to 1, so both
+          // are truthy on every standard material. Only a non-black emissive
+          // means the material is actually a light.
+          var lit = !!(m.emissive && m.emissive.getHex() !== 0);
+          if (lit && m.userData.baseEI === undefined) {
+            m.userData.baseEI = m.emissiveIntensity;
+          }
+          if (lit && SHOP_RE.test(n)) { shops.push(m); }
+          else if (lit && LAMP_RE.test(n)) { lamps.push(m); }
+          else if (WINDOW_RE.test(n)) { windows.push(m); }
+        });
+      });
+      this.mats = { lamps: lamps, shops: shops, windows: windows, roads: roads };
+    },
+
+    toggle: function () {
+      this.el.setAttribute('daynight', 'mode',
+                           this.data.mode === 'day' ? 'night' : 'day');
+      say(this.data.mode === 'night' ? 'Night' : 'Day');
+      hud.style.opacity = '1';
+      syncPanel();
+    },
+    toggleWet: function () {
+      this.el.setAttribute('daynight', 'wet', !this.data.wet);
+      say(this.data.wet ? 'Wet road' : 'Dry road');
+      hud.style.opacity = '1';
+      syncPanel();
+    },
+
+    update: function () { this.apply(); },
+
+    apply: function () {
+      var L = LOOK[this.data.mode] || LOOK.day;
+      var wet = this.data.wet;
+      if (!this.mats) { this.collectMats(); }
+      var m = this.mats;
+      if (!m) { return; }
+
+      this.el.setAttribute('background', 'color', L.sky);
+      this.el.setAttribute('fog', { type: 'linear', color: L.fog,
+                                    near: L.fogNear, far: L.fogFar });
+      var hemi = this.el.querySelector('[light*="hemisphere"]');
+      if (hemi) {
+        hemi.setAttribute('light', { type: 'hemisphere', color: L.hemi.color,
+                                     groundColor: L.hemi.ground,
+                                     intensity: L.hemi.intensity });
+      }
+      var sun = document.getElementById('sun');
+      if (sun) {
+        var cfg = sun.getAttribute('light');
+        cfg.color = L.sun.color;
+        cfg.intensity = L.sun.intensity;
+        sun.setAttribute('light', cfg);
+        sun.setAttribute('position', L.sun.pos);
+      }
+
+      m.lamps.forEach(function (x) { x.emissiveIntensity = x.userData.baseEI * L.lamp; });
+      m.shops.forEach(function (x) { x.emissiveIntensity = x.userData.baseEI * L.shop; });
+      // Lights inside the homes: each building GLB carries its own copy of the
+      // window material, so varying them by a hash of the uuid lights the
+      // terrace unevenly instead of switching every window on at once.
+      m.windows.forEach(function (x, i) {
+        var lit = L.window * (0.5 + 0.5 * (((i * 2654435761) % 97) / 97));
+        x.emissive = x.emissive || new THREE.Color();
+        x.emissive.setHex(0xffcf8a);
+        x.emissiveIntensity = lit * 6.0;
+      });
+      m.roads.forEach(function (x) {
+        x.roughness = wet ? 0.07 : x.userData.dryRough;
+        x.envMapIntensity = (wet ? 2.6 : 0.6) * L.envI;
+        x.color.setRGB(wet ? 0.030 : 0.055, wet ? 0.032 : 0.056,
+                       wet ? 0.035 : 0.058);
+      });
+
+      this.bake(L);
+    },
+
+    // One cube render of the street, prefiltered. This is what puts real
+    // buildings in the reflections instead of a vertical gradient.
+    bake: function (L) {
+      var renderer = this.el.renderer;
+      if (!renderer || this._baking) { return; }
+      this._baking = true;
+      var scene = this.el.object3D, self = this;
+      setTimeout(function () {
+        try {
+          var rt = new THREE.WebGLCubeRenderTarget(256, { type: THREE.HalfFloatType });
+          var cam = new THREE.CubeCamera(0.5, 420, rt);
+          cam.position.set(0, 3.2, 0);
+          scene.add(cam);
+          cam.update(renderer, scene);
+          scene.remove(cam);
+          var pm = new THREE.PMREMGenerator(renderer);
+          var env = pm.fromCubemap(rt.texture).texture;
+          pm.dispose(); rt.dispose();
+          if (scene.environment && scene.environment.dispose) {
+            scene.environment.dispose();
+          }
+          scene.environment = env;
+        } catch (e) {
+          say('Could not bake the reflections: ' + e.message);
+        }
+        self._baking = false;
+      }, 60);
+    }
+  });
+
   // ---------------------------------------------------------------- diagnostics
   //
   // The Quest browser has no console. When a behaviour does not work on the
@@ -629,6 +883,65 @@
     }, 200);
   }
 
+  // ---------------------------------------------------------------- controls
+  var TOGGLES = [
+    { id: 'tg-night', label: 'Night',
+      get: function (s) { return s.getAttribute('daynight').mode === 'night'; },
+      set: function (s) { s.components.daynight.toggle(); },
+      vr: 'right stick click' },
+    { id: 'tg-wet', label: 'Wet road',
+      get: function (s) { return s.getAttribute('daynight').wet; },
+      set: function (s) { s.components.daynight.toggleWet(); },
+      vr: 'left stick click' },
+    { id: 'tg-traffic', label: 'Traffic',
+      get: function (s) { return s.components.traffic && s.components.traffic.data.on; },
+      set: function (s) {
+        var c = s.components.traffic;
+        if (c) { c.data.on = !c.data.on; }
+      }, vr: 'T' },
+    { id: 'tg-shadows', label: 'Shadows',
+      get: function (s) { return !!(s.renderer && s.renderer.shadowMap.enabled); },
+      set: function (s) {
+        var r = s.renderer;
+        if (r) { r.shadowMap.enabled = !r.shadowMap.enabled; r.shadowMap.needsUpdate = true; }
+      }, vr: 'L' }
+  ];
+
+  function syncPanel() {
+    var scene = document.querySelector('a-scene');
+    TOGGLES.forEach(function (t) {
+      var el = document.getElementById(t.id);
+      if (!el) { return; }
+      var on = !!t.get(scene);
+      el.setAttribute('aria-pressed', on ? 'true' : 'false');
+      el.querySelector('.sw').textContent = on ? 'on' : 'off';
+    });
+  }
+
+  function buildPanel() {
+    // xr-locomotion adds its own Reset button at top right with inline styles,
+    // which is exactly where the settings panel sits. Move it rather than
+    // forking the module.
+    var reset = document.querySelector('body > button');
+    if (reset && /reset/i.test(reset.textContent || '')) {
+      reset.style.top = 'auto';
+      reset.style.bottom = '112px';
+    }
+    var box = document.getElementById('settings');
+    var scene = document.querySelector('a-scene');
+    TOGGLES.forEach(function (t) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.id = t.id;
+      b.title = 'In VR: ' + t.vr;
+      b.innerHTML = t.label + '<span class="sw">off</span>';
+      b.addEventListener('click', function () { t.set(scene); syncPanel(); });
+      box.appendChild(b);
+    });
+    box.hidden = false;
+    syncPanel();
+  }
+
   // ---------------------------------------------------------------- page keys
   function pageKeys() {
     window.addEventListener('keydown', function (e) {
@@ -639,12 +952,16 @@
         if (c) {
           c.data.on = !c.data.on;
           say(c.data.on ? 'Traffic moving (T to hold)' : 'Traffic held (T to move)');
+          syncPanel();
         }
       }
       else if (e.code === 'KeyL') {
         var r = scene.renderer;
         if (r) { r.shadowMap.enabled = !r.shadowMap.enabled; r.shadowMap.needsUpdate = true; }
+        syncPanel();
       }
+      else if (e.code === 'KeyN') { scene.components.daynight.toggle(); }
+      else if (e.code === 'KeyG') { scene.components.daynight.toggleWet(); }
       var m = /^Digit([0-9])$/.exec(e.code);
       if (m) { goToView((parseInt(m[1], 10) + 9) % 10); }
     });

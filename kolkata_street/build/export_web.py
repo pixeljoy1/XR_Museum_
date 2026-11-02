@@ -160,6 +160,13 @@ def merge_similar_materials(colour_step=0.045, rough_step=0.18):
     for mat in bpy.data.materials:
         if not mat.use_nodes:
             continue
+        # Glazing is left alone. Merging it saves nothing -- glass only ever
+        # merges with other glass, and those live in different asset files, so
+        # no primitive is combined -- and it costs the page its per-building
+        # window material, which is what the night lighting varies to light the
+        # terrace unevenly instead of switching every window on at once.
+        if 'glass' in mat.name.lower() or 'windscreen' in mat.name.lower():
+            continue
         bsdf = next((x for x in mat.node_tree.nodes
                      if x.type == 'BSDF_PRINCIPLED'), None)
         if bsdf is None:

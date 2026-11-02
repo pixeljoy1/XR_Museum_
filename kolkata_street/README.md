@@ -403,6 +403,35 @@ world box refreshed, because the locomotion module culls its raycasts against
 that box: a stale one means you get stopped by where the taxi used to be. `T`
 holds the traffic.
 
+### Day, night and the wet road
+
+A control panel, top right: **Night**, **Wet road**, **Traffic**, **Shadows**.
+Keys `N`, `G`, `T`, `L`. In a headset there is no keyboard, so the two scene
+settings are on the thumbstick clicks — **right stick click** for night, **left
+stick click** for the wet road — which are the only buttons `xr-locomotion`
+leaves free.
+
+**The reflections are baked from the city, not from a gradient.** The page
+starts with a vertical gradient environment map so metal is not black, and then,
+once everything is placed, renders one cube from the middle of the street at
+3.2 m and runs it through `PMREMGenerator`. After that the wet road and the
+chrome reflect actual buildings, trams and taxis, which is what makes the
+monsoon look read. It costs six renders once, nothing per frame, and it is
+re-baked when the light changes.
+
+Night drives four things at once: the sky, fog and lights; the lamp materials
+(`city_lamp`, `amb_lamp`, tram lamps, the TAXI sign) back up to the emissive
+strength they were authored with in Blender; the shop interiors; and the
+building windows, which get a warm emissive they do not have by day.
+
+Each building GLB carries its own copy of `city_glass`, so the window brightness
+is varied by a hash per material and the terrace lights unevenly rather than
+every window coming on at once. That only works because `export_web.py`
+deliberately **excludes glazing from the material merge** — merging it saves
+nothing, since glass only ever merges with other glass and those live in
+different asset files, but it would cost the page its per-building window
+material.
+
 ### When a behaviour does not work on the headset
 
 The Quest browser has no console, so press **`I`** (or add `?diag=1`) for a live
@@ -418,7 +447,22 @@ sources 2
   right ax 0.0,0.0,0.6,0.0    bt v0001
 ```
 
-That distinguishes the three failures that look identical from inside a headset:
+**The most likely cause, and what is done about it.** `xr-locomotion` binds
+A-Frame's `oculus-touch-controls`, which matches the WebXR profiles
+`oculus-touch`, `-v2` and `-v3`. A Quest 3 reports its controllers as
+`meta-quest-touch-plus`, which that component does **not** match — so it never
+binds, no events are emitted, and every control is dead while the scene renders
+perfectly. That is exactly the "launches fine, nothing works" symptom.
+
+Rather than fork the module, `quest-input` reads the raw WebXR gamepads every
+frame and writes the same fields the module's own handlers would. Analog values
+are plain assignment, so if the A-Frame component does bind on some other
+headset the two agree; buttons are edge-detected and suppressed the moment a
+native A-Frame button event is seen, so nothing fires twice. On entering VR the
+page prints which profiles the controllers actually reported.
+
+The monitor still distinguishes the three failures that look identical from
+inside a headset:
 **`sources 0`** means WebXR is not handing over the controllers at all;
 **gamepad axes moving while `stick` stays 0** means the controller component is
 not emitting events, in which case try adding `meta-touch-controls` beside

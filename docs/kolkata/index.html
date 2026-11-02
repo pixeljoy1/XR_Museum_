@@ -39,8 +39,23 @@
     #stepper button + button { border-left: 1px solid rgba(255,255,255,.09); }
     #stepper button:hover, #stepper button:focus-visible {
       background: rgba(255,255,255,.16); }
-    #views { right: 12px; top: 56px; width: 254px; font-size: 12px;
-             overflow: hidden auto; max-height: calc(100% - 72px); }
+    #settings { right: 12px; top: 12px; width: 254px; overflow: hidden;
+                display: flex; flex-wrap: wrap; }
+    #settings button {
+      flex: 1 1 50%; display: flex; justify-content: space-between;
+      align-items: center; gap: 8px; padding: 8px 12px; font: inherit;
+      font-size: 12px; color: #f2f5f9; background: none; border: 0;
+      border-top: 1px solid rgba(255,255,255,.09); cursor: pointer;
+    }
+    #settings button:first-child, #settings button:nth-child(2) { border-top: 0; }
+    #settings button:nth-child(odd) { border-right: 1px solid rgba(255,255,255,.09); }
+    #settings button:hover, #settings button:focus-visible {
+      background: rgba(255,255,255,.13); }
+    #settings .sw { font-size: 11px; color: #9aa6b4; text-transform: uppercase;
+                    letter-spacing: .06em; }
+    #settings button[aria-pressed="true"] .sw { color: #ffcf7a; }
+    #views { right: 12px; top: 120px; width: 254px; font-size: 12px;
+             overflow: hidden auto; max-height: calc(100% - 136px); }
     #views h2 { margin: 0; padding: 9px 12px 7px; font-size: 11px;
                 letter-spacing: .07em; text-transform: uppercase; color: #ffcf7a; }
     #views button { display: block; width: 100%; text-align: left; padding: 7px 12px;
@@ -70,15 +85,17 @@
     <div id="prog-label">Loading the street</div>
     <div id="prog-track"><div id="prog-fill"></div></div>
   </div>
+  <div id="settings" class="panel" hidden></div>
   <div id="views" class="panel" hidden><h2>Viewpoints</h2></div>
   <div id="keys" class="panel" hidden>
     <b>Space</b> trigger &nbsp; <b>WASD</b> stick &nbsp; <b>Shift</b> reverse &nbsp;
     <b>E Q</b> up/down &nbsp; <b>F</b> walk/fly &nbsp; <b>R</b> reset &nbsp;
-    <b>1...0</b> viewpoints &nbsp; <b>V</b> next &nbsp; <b>T</b> trams &nbsp;
-    <b>I</b> input monitor<br>
+    <b>1...0</b> viewpoints &nbsp; <b>V</b> next &nbsp; <b>N</b> night &nbsp;
+    <b>G</b> wet &nbsp; <b>T</b> traffic &nbsp; <b>I</b> input monitor<br>
     <b>Quest</b> &mdash; right stick walk and turn; right trigger walks where the hand
     points; left stick forward teleports. <b>A</b> walk/fly, <b>B</b> or <b>Y</b> reset,
     <b>X</b> next viewpoint.
+    Click the right stick for night, the left stick for the wet road.
   </div>
   <div id="stepper" class="panel" hidden>
     <button type="button" id="prev" aria-label="Previous viewpoint">&#9664; View</button>
