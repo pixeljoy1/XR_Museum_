@@ -3,3 +3,6 @@
 # per-group lighting atlases: already embedded in docs/models/museum.glb
 build/bake_*.jpg
 build/build.log
+
+# kolkata_street: build logs and generated preview renders
+/kolkata_street/build/*.log
