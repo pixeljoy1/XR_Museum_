@@ -356,7 +356,7 @@ dialog, so **this page adds no camera and no controllers of its own**:
 | | |
 |---|---|
 | **Quest** | Right stick walk and turn. Right trigger walks where the hand points, harder is faster. Left stick forward teleports. **A** walk/fly, **B** or **Y** reset dialog, **X** next viewpoint. Flying: right trigger glides, left trigger or right stick back reverses, tilt the right hand while a trigger is held to climb or dive, left stick for height, wrist steers. |
-| **Desktop** | `Space` trigger, `WASD` stick, `Shift` reverse, `E`/`Q` up and down, `F` walk/fly, `R` reset, `Esc` close. Plus this page's own: `1`…`0` viewpoints, `V` next, `T` trams, `L` shadows, `I` input monitor. |
+| **Desktop** | `Space` trigger, `WASD` stick, `Shift` reverse, `E`/`Q` up and down, `F` walk/fly, `R` reset, `Esc` close. Plus this page's own: `1`…`0` viewpoints, `V` next, `T` hold the traffic, `L` shadows, `I` input monitor. |
 
 ### Meeting the module's world contract
 
@@ -378,6 +378,30 @@ So the scene is split:
 
 `street.js` calls `collect()` on the module once the city is placed, because
 everything arrives after the module has loaded.
+
+### The traffic moves
+
+The street drives itself, which is most of what makes it feel like a street
+rather than a model of one. `SPEED` at the top of the traffic section of
+`street.js`:
+
+| | m/s | |
+|---|---|---|
+| Tram | 3.0 | about 11 km/h — a Kolkata tram trudges, and looks it |
+| Taxi | 7.2 | about 26 km/h |
+| Auto-rickshaw | 5.6 | about 20 km/h |
+
+Nothing is re-placed: `layout.json` stays the source of truth and only a
+distance along each vehicle's own heading is animated, wrapping round the length
+of the street. The two trams are clones and move directly; the taxis and autos
+are instanced, so their instance matrices are rewritten each frame — eight
+vehicles across thirteen sub-meshes is a few hundred matrix writes, which costs
+nothing next to drawing them.
+
+Each vehicle's **collision proxy is carried along with it**, and its cached
+world box refreshed, because the locomotion module culls its raycasts against
+that box: a stale one means you get stopped by where the taxi used to be. `T`
+holds the traffic.
 
 ### When a behaviour does not work on the headset
 
