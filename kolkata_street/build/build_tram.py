@@ -312,6 +312,12 @@ def build_body(which, coll):
 
     M.weld(shell)
     M.shade_flat(shell)
+    # The shell has just taken a dozen booleans. One going wrong does not raise;
+    # it quietly returns a fragment. closed= going False is the earliest signal,
+    # and it is what the cab chamfer used to trip before it was built into the loft.
+    mn_s, mx_s = M.dims(shell)
+    S.log('  %-5s shell closed=%-5s  x %7.3f..%7.3f  z %6.3f..%6.3f  %d windows'
+          % (which, M.is_closed(shell), mn_s.x, mx_s.x, mn_s.z, mx_s.z, len(windows)))
     parts.append(shell)
     parts.append(roofcap)
 

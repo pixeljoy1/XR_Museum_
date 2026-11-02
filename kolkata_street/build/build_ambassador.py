@@ -504,6 +504,13 @@ def main():
     scratch = S.coll('_scratch')
 
     def chk(stage):
+        """Log the body's envelope and whether it is still a closed solid.
+
+        Not debug leftovers. A boolean that goes wrong here does not raise --
+        it quietly returns a fragment, or eats the car, and the failure only
+        shows up in a render twenty minutes later. closed= going False is the
+        earliest signal.
+        """
         mn, mx = M.dims(body)
         S.log('%-12s closed=%-5s  x %6.3f..%6.3f  y %6.3f..%6.3f  z %6.3f..%6.3f'
               % (stage, M.is_closed(body), mn.x, mx.x, mn.y, mx.y, mn.z, mx.z))
