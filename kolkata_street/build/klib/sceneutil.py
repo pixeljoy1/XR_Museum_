@@ -88,8 +88,9 @@ def cycles(samples=128, denoise=True, res=(1920, 1080), pct=100, device='CPU',
     sc.cycles.preview_samples = max(16, samples // 8)
     sc.cycles.use_denoising = denoise
     sc.cycles.max_bounces = bounces
-    sc.cycles.diffuse_bounces = min(4, bounces)
-    sc.cycles.glossy_bounces = bounces
+    sc.cycles.diffuse_bounces = min(3, bounces)
+    sc.cycles.glossy_bounces = min(3, bounces)   # a wet road is a mirror: these
+                                                 # are the expensive ones
     sc.cycles.transmission_bounces = bounces
     sc.cycles.transparent_max_bounces = 8
     sc.cycles.sample_clamp_indirect = clamp_indirect

@@ -38,10 +38,15 @@ you would rather have a single self-contained scene file.
 ## Building
 
 ```bash
-./build/make_all.sh                 # everything
-./build/make_all.sh --preview       # ... and render the preview sheets too
+./build/make_all.sh                 # everything; about a minute, no rendering
+./build/make_all.sh --preview       # ... and render every preview sheet as well
 BLENDER=/Applications/Blender.app/Contents/MacOS/Blender ./build/make_all.sh
 ```
+
+The geometry build is fast. `--preview` is not: it renders seven tram views, six
+taxi views and all ten street shots in Cycles. Add `--samples 32` to make that
+a quick look, or leave `--preview` off and render what you want afterwards with
+`build/render.py --draft`.
 
 or one at a time:
 

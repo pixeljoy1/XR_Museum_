@@ -518,8 +518,11 @@ def main():
     build_sky(fog=not S.has_flag('--nofog'))
     build_cameras(cams)
 
-    S.cycles(samples=int(S.argval('--samples', 160, int)), res=(1920, 1080),
-             device='CPU', bounces=6, clamp_indirect=6.0)
+    # Four bounces, not six. The whole carriageway is a near-mirror when it is
+    # wet, so every extra glossy bounce is paid for over most of the frame --
+    # and by bounce four the contribution is invisible against the haze.
+    S.cycles(samples=int(S.argval('--samples', 96, int)), res=(1920, 1080),
+             device='CPU', bounces=4, clamp_indirect=4.0)
     sc = bpy.context.scene
     sc.render.use_persistent_data = True
 

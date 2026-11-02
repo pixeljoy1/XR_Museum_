@@ -271,10 +271,6 @@ def emissive(name, color=(1.0, 0.93, 0.78), strength=12.0):
     return m
 
 
-def plastic(name, color, rough=0.45):
-    return base(name, color, rough, 0.0, coat=0.25)
-
-
 def painted_metal(name, color, rough=0.45, dirt=0.25):
     m = base(name, color, rough, 0.0, coat=0.3, coat_rough=0.18)
     if dirt:
@@ -417,49 +413,6 @@ def wet_asphalt(name='asphalt_wet', wetness=0.75, puddle_scale=0.55,
 def concrete(name='concrete', color=(0.52, 0.51, 0.49), rough=0.88):
     m = base(name, color, rough)
     mottle(m, 7.0, 0.14, 9.0, 0.78, bump=0.25)
-    return m
-
-
-def granite_setts(name='setts', color=(0.075, 0.072, 0.068), wet=0.6):
-    """The stone block band the tram rails are laid in.
-
-    The trap here is grazing incidence. A smooth dielectric at a shallow angle is
-    almost totally reflective whatever its base colour, so a glossy setts band
-    seen from 1.6 m up turns into a sheet of white sky and reads as a pavement
-    running down the middle of the road. Real wet setts break that reflection up,
-    so the roughness is kept high, the specular level is pulled down, and a fine
-    noise bump is mixed in on top of the block pattern.
-    """
-    m, nt, bsdf = _new(name)
-    if nt is None:
-        return m
-    tc, mp = _mapping(nt, (5.5, 5.5, 5.5), (-1100, 300), 'Object')
-    br = nt.nodes.new('ShaderNodeTexBrick')
-    br.location = (-900, 300)
-    br.inputs['Color1'].default_value = (*color, 1)
-    br.inputs['Color2'].default_value = (*[c * 1.6 for c in color], 1)
-    br.inputs['Mortar'].default_value = (*[c * 0.45 for c in color], 1)
-    br.inputs['Scale'].default_value = 1.0
-    br.inputs['Mortar Size'].default_value = 0.035
-    br.inputs['Brick Width'].default_value = 0.55
-    br.inputs['Row Height'].default_value = 0.42
-    nt.links.new(mp.outputs['Vector'], br.inputs['Vector'])
-    nt.links.new(br.outputs['Color'], _socket(bsdf, 'base'))
-    _set(bsdf, 'roughness', 0.78 - 0.18 * wet)
-    _set(bsdf, 'specular', 0.30)
-    grain = _noise(nt, 120.0, 7.0, 0.6, 0.0, (-900, -120))
-    mixb, mixb_out = _mix_float(nt, None, None, 0.0, 0.0, (-640, -120))
-    is_mix = mixb.bl_idname == 'ShaderNodeMix'
-    nt.links.new(br.outputs['Fac'], mixb.inputs[2] if is_mix else mixb.inputs['Color1'])
-    nt.links.new(grain.outputs['Fac'],
-                 mixb.inputs[3] if is_mix else mixb.inputs['Color2'])
-    (mixb.inputs[0] if is_mix else mixb.inputs['Fac']).default_value = 0.45
-    bump = nt.nodes.new('ShaderNodeBump')
-    bump.location = (-300, -120)
-    bump.inputs['Strength'].default_value = 0.65
-    bump.inputs['Distance'].default_value = 0.010
-    nt.links.new(mixb_out, bump.inputs['Height'])
-    nt.links.new(bump.outputs['Normal'], _socket(bsdf, 'normal'))
     return m
 
 

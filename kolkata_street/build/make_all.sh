@@ -25,8 +25,14 @@ fi
 echo "using $BLENDER"
 "$BLENDER" --version | head -1
 
+# macOS still ships bash 3.2, where "${arr[@]}" on an EMPTY array trips `set -u`.
+# ${arr[@]+"${arr[@]}"} expands to nothing when the array is empty and to the
+# quoted elements when it is not.
 EXTRA=("$@")
-run () { echo; echo "=== $1 ==="; "$BLENDER" -b -P "build/$1" -- "${EXTRA[@]}"; }
+run () {
+  echo; echo "=== $1 ==="
+  "$BLENDER" -b -P "build/$1" -- ${EXTRA[@]+"${EXTRA[@]}"}
+}
 
 run build_tram.py
 run build_ambassador.py

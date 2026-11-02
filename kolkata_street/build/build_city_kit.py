@@ -336,7 +336,9 @@ def hoarding(name='KIT_HOARDING', w=4.2, h=2.6, legs=3.4, seed=5):
                name='artblock', coll=coll, mat=MAT['white'])]
     t = M.text_solid('CALCUTTA', h * 0.17, 0.004, 'hoardtext', coll, MAT['white'],
                      spacing=0.95)
-    M.place(t, (w * 0.16, -0.115, legs + h * 0.66), (math.pi / 2, 0, math.pi))
+    # the panel faces -Y, so a viewer there reads left-to-right along +X:
+    # rot (90, 0, 0). Adding a Z turn of 180 mirrors the lettering.
+    M.place(t, (-w * 0.02, -0.115, legs + h * 0.66), (math.pi / 2, 0, 0))
     p.append(t)
     for sx in (-1, 1):
         p.append(M.box((0.10, 0.10, legs + h), (sx * (w / 2 - 0.3), 0,

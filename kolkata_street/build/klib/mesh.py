@@ -165,24 +165,6 @@ def catmull_rom(pts, samples_per_span=8, closed=False, tension=0.0):
     return out
 
 
-def resample(poly, n):
-    """Resample a polyline to exactly n points, evenly by arc length."""
-    P = [Vector(p) for p in poly]
-    seg = [(P[i + 1] - P[i]).length for i in range(len(P) - 1)]
-    total = sum(seg)
-    if total <= 1e-9:
-        return [P[0].copy() for _ in range(n)]
-    out, acc, j = [], 0.0, 0
-    for i in range(n):
-        target = total * i / (n - 1)
-        while j < len(seg) - 1 and acc + seg[j] < target:
-            acc += seg[j]
-            j += 1
-        t = 0.0 if seg[j] < 1e-12 else (target - acc) / seg[j]
-        out.append(P[j].lerp(P[j + 1], min(1.0, max(0.0, t))))
-    return out
-
-
 def smoothstep(a, b, t):
     t = min(1.0, max(0.0, (t - a) / (b - a))) if b != a else (0.0 if t < a else 1.0)
     return t * t * (3 - 2 * t)
@@ -395,25 +377,6 @@ def subdivide(ob, cuts=1, simple=False):
     return ob
 
 
-def subsurf(ob, levels=2, simple=False):
-    m = ob.modifiers.new('sub', 'SUBSURF')
-    m.levels = m.render_levels = levels
-    m.subdivision_type = 'SIMPLE' if simple else 'CATMULL_CLARK'
-    apply_mods(ob)
-    return ob
-
-
-def array_mod(ob, count, offset, apply=True):
-    m = ob.modifiers.new('arr', 'ARRAY')
-    m.count = count
-    m.use_relative_offset = False
-    m.use_constant_offset = True
-    m.constant_offset_displace = offset
-    if apply:
-        apply_mods(ob)
-    return ob
-
-
 def apply_mods(ob):
     with bpy.context.temp_override(object=ob, active_object=ob,
                                    selected_editable_objects=[ob]):
@@ -447,30 +410,6 @@ def weld(ob, dist=1e-4):
     bmesh.ops.remove_doubles(bm, verts=bm.verts[:], dist=dist)
     bm.to_mesh(ob.data)
     bm.free()
-    return ob
-
-
-def triangulate_ngons(ob):
-    bm = bmesh.new()
-    bm.from_mesh(ob.data)
-    ngons = [f for f in bm.faces if len(f.verts) > 4]
-    if ngons:
-        bmesh.ops.triangulate(bm, faces=ngons)
-    bm.to_mesh(ob.data)
-    bm.free()
-    return ob
-
-
-# ------------------------------------------------------------------ misc
-def set_origin(ob, point):
-    """Move the object's origin to a world point without moving the geometry."""
-    p = Vector(point)
-    mw = ob.matrix_world.copy()
-    delta = ob.matrix_world.inverted() @ p
-    for v in ob.data.vertices:
-        v.co -= delta
-    ob.matrix_world = mw
-    ob.location = mw @ delta
     return ob
 
 
