@@ -4,6 +4,8 @@
 #   ./build/make_web.sh                 -> dist/kolkataStreetXR/
 #   ./build/make_web.sh --glb           -> same, but keep .glb (smaller; needs a
 #                                          host that serves model/gltf-binary)
+#   ./build/make_web.sh --back ../experiences/kolkata-street-vr/
+#                                       -> show a link back to the host page
 #
 # The primary deployment is Aritra's portfolio:
 #   https://pixeljoy1.github.io/aritra-portfolio/kolkataStreetXR/
@@ -24,7 +26,13 @@ fi
 [ -n "$BLENDER" ] || { echo "Blender not found. Set BLENDER=/path/to/blender" >&2; exit 1; }
 
 USE_GLB=0
-for a in "$@"; do [ "$a" = "--glb" ] && USE_GLB=1; done
+BACK=""
+prev=""
+for a in "$@"; do
+  [ "$a" = "--glb" ] && USE_GLB=1
+  [ "$prev" = "--back" ] && BACK="$a"
+  prev="$a"
+done
 
 OUT="dist/kolkataStreetXR"
 rm -rf "$OUT"
@@ -37,6 +45,21 @@ echo "=== exporting models and layout ==="
 "$BLENDER" -b scene/_flat.blend -P build/export_web.py
 
 cp ../docs/kolkata/index.html       "$OUT/index.html"
+# The host page can wrap this one. --back <href> turns on the link back to it;
+# the page itself reads data-back off the scene, so the host never has to keep
+# a patched copy of index.html that the next deploy would overwrite.
+if [ -n "$BACK" ]; then
+  python3 - "$OUT/index.html" "$BACK" <<'PY'
+import sys
+p, back = sys.argv[1], sys.argv[2]
+s = open(p).read()
+old = '      xr-locomotion='
+assert old in s, 'scene tag not found'
+s = s.replace(old, '      data-back="%s"\n' % back + old, 1)
+open(p, 'w').write(s)
+PY
+  echo "back link -> $BACK"
+fi
 cp ../docs/kolkata/street.js        "$OUT/street.js"
 cp ../docs/kolkata/xr-locomotion.js "$OUT/xr-locomotion.js"
 

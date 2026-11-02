@@ -252,6 +252,7 @@
         document.getElementById('views').hidden = false;
         document.getElementById('keys').hidden = false;
         buildViewMenu(L.viewpoints);
+        hostChrome();
         pageKeys();
         diagnostics();
         goToView(0);
@@ -423,6 +424,29 @@
       b.title = v.note;
       b.addEventListener('click', function () { goToView(i); });
       box.appendChild(b);
+    });
+  }
+
+  // The host page may wrap this one. `data-back` on the scene turns on a link
+  // back to wherever it is embedded; the stepper is the viewpoint list for a
+  // phone, where that list is hidden. Both live here rather than in the host's
+  // copy of the file, so a redeploy cannot drop them.
+  function hostChrome() {
+    var scene = document.querySelector('a-scene');
+    var href = scene.dataset.back ||
+               new URLSearchParams(location.search).get('back');
+    if (href) {
+      var a = document.getElementById('back');
+      a.href = href;
+      a.hidden = false;
+      document.body.classList.add('has-back');
+    }
+    document.getElementById('stepper').hidden = false;
+    document.getElementById('prev').addEventListener('click', function () {
+      goToView((document.querySelector('a-scene').viewIndex || 0) - 1);
+    });
+    document.getElementById('next').addEventListener('click', function () {
+      goToView((document.querySelector('a-scene').viewIndex || 0) + 1);
     });
   }
 
