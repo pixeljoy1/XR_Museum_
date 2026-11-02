@@ -17,10 +17,51 @@
 
   var THREE = AFRAME.THREE;
   var hud = document.getElementById('hud');
-  var VERSION = '1.00';
+  var VERSION = '1.01';
+
+  // Resolve data files against THIS SCRIPT's URL, not the document's.
+  // A host may serve the page at a path with no trailing slash
+  // (/artifact/<id>, /portals/kolkata), and a bare 'layout.json' then resolves
+  // against the PARENT directory and 404s -- which looks exactly like a page
+  // that loaded but stayed empty, because the sky still renders. The script's
+  // own src always carries the right directory.
+  var BASE = (function () {
+    var tag = document.currentScript;
+    if (!tag) {
+      var all = document.getElementsByTagName('script');
+      for (var i = all.length - 1; i >= 0; i--) {
+        if (/street\.js(\?|$)/.test(all[i].src || '')) { tag = all[i]; break; }
+      }
+    }
+    var src = (tag && tag.src) || '';
+    return src ? src.replace(/[?#].*$/, '').replace(/[^/]*$/, '') : '';
+  })();
+  function asset(path) { return BASE + path; }
+
+  // --- loading progress -----------------------------------------------------
+  var inflight = {};
+  function setProgress(done, total) {
+    var bar = document.getElementById('prog');
+    if (!bar) { return; }
+    bar.hidden = false;
+    var frac = 0;
+    for (var k in inflight) {
+      if (Object.prototype.hasOwnProperty.call(inflight, k)) { frac += inflight[k]; }
+    }
+    var pct = total ? Math.max(1, Math.min(100,
+      Math.round(((done + frac) / total) * 100))) : 1;
+    document.getElementById('prog-fill').style.width = pct + '%';
+    document.getElementById('prog-label').textContent =
+      'Loading the street  ' + done + ' / ' + total + ' models';
+  }
+  function hideProgress() {
+    var bar = document.getElementById('prog');
+    if (bar) { bar.hidden = true; }
+  }
   var CHUNK_M = 110;          // street metres per instanced batch
 
   function say(msg, isError) {
+    hud.style.whiteSpace = 'pre-line';
     hud.textContent = msg;
     hud.className = isError ? 'error' : '';
     if (isError) { console.error(msg); }
@@ -72,7 +113,7 @@
 
     init: function () {
       var self = this;
-      var url = this.data.src;
+      var url = asset(this.data.src);
       say('Loading layout...');
       fetch(url).then(function (r) {
         if (!r.ok) { throw new Error(url + ' -> HTTP ' + r.status); }
@@ -80,81 +121,68 @@
       }).then(function (layout) {
         self.layout = layout;
         self.el.sceneEl.layout = layout;
-        return self.loadAssets(layout.assets);
-      }).then(function (models) {
-        self.place(models);
+        return self.loadAndPlace(layout);
       }).catch(function (e) {
-        say('Could not build the street: ' + e.message +
-            ' - are you serving this over http? (cd docs/kolkata && ' +
-            'python3 -m http.server 4211)', true);
+        hideProgress();
+        say('Could not build the street.\n' + e.message +
+            '\nLooked in: ' + (BASE || '(the page directory)') +
+            '\nIf you opened the file directly, serve the folder over http ' +
+            'instead:  python3 -m http.server 4210', true);
       });
     },
 
-    // Fetch and parse each GLB exactly once.
-    loadAssets: function (names) {
+    // Each asset is placed the moment it arrives, rather than after all of
+    // them. The ground goes first, so within a second there is a street to
+    // stand in and the rest of it builds up around you -- which is a much
+    // better answer to a slow connection than several megabytes of grey.
+    loadAndPlace: function (L) {
+      var self = this;
+      var city = document.getElementById('city').object3D;
       var loader = new THREE.GLTFLoader();
-      var done = 0, total = names.length;
       // Some static hosts serve only a fixed set of file types and .glb is not
       // always one, so layout.json can ask for self-contained .json glTF
       // instead. GLTFLoader sniffs the content, not the name.
-      var ext = (this.layout && this.layout.asset_ext) || '.glb';
-      return Promise.all(names.map(function (name) {
-        return new Promise(function (resolve, reject) {
-          loader.load('models/' + name + ext, function (gltf) {
-            say('Loading models... ' + (++done) + '/' + total);
-            resolve([name, gltf.scene]);
-          }, undefined, function (err) {
-            reject(new Error('models/' + name + ext + ': ' +
-                             (err.message || err)));
-          });
-        });
-      })).then(function (pairs) {
-        var models = {};
-        pairs.forEach(function (p) { models[p[0]] = prepare(p[1]); });
-        return models;
+      var ext = L.asset_ext || '.glb';
+      var walk = [], trams = [], batches = 0;
+
+      var byAsset = {};
+      L.instances.forEach(function (inst) {
+        (byAsset[inst.asset] = byAsset[inst.asset] || []).push(inst);
       });
-    },
 
-    place: function (models) {
-      var city = document.getElementById('city').object3D;
-      var L = this.layout;
-      var walk = [], trams = [];
+      var names = L.assets.slice().sort(function (a, b) {
+        return (a === 'ground' ? -1 : 0) - (b === 'ground' ? -1 : 0);
+      });
+      var done = 0, total = names.length;
+      setProgress(0, total);
 
-      // the ground is placed once, at the origin
-      if (models.ground) {
-        var g = models.ground;
-        city.add(g);
-        g.traverse(function (o) {
-          if (o.isMesh && /^WALK_/.test(o.name)) { walk.push(o); }
-        });
-      }
-
-      // The two trams are ordinary clones, because they move independently.
-      // Everything else is batched.
-      var batched = {};
-      L.instances.forEach(function (inst, i) {
-        var src = models[inst.asset];
-        if (!src) { return; }
-        if (inst.asset === L.tram_asset) {
-          var o = src.clone(true);
-          o.position.set(inst.pos[0], inst.pos[1], inst.pos[2]);
-          o.rotation.set(0, THREE.MathUtils.degToRad(inst.rotY), 0);
-          city.add(o);
-          trams.push({ obj: o,
-                       dir: Math.cos(THREE.MathUtils.degToRad(inst.rotY)) });
+      function placeOne(name, root) {
+        prepare(root);
+        if (name === 'ground') {
+          city.add(root);
+          root.traverse(function (o) {
+            if (o.isMesh && /^WALK_/.test(o.name)) { walk.push(o); }
+          });
+          self.el.sceneEl.walkables = walk;
           return;
         }
-        (batched[inst.asset] = batched[inst.asset] || []).push(inst);
-      });
-
-      // Chunk along the street, but only where it buys anything. A batch that
-      // spans the whole 250 m can never be frustum-culled, so every triangle in
-      // it is submitted every frame; a batch of two is a draw call that may as
-      // well have stayed a clone. Split only the assets that are numerous
-      // enough for the split to leave real groups behind.
-      var calls = 0;
-      Object.keys(batched).forEach(function (asset) {
-        var list = batched[asset];
+        var list = byAsset[name] || [];
+        if (name === L.tram_asset) {
+          list.forEach(function (inst) {
+            var o = root.clone(true);
+            o.position.set(inst.pos[0], inst.pos[1], inst.pos[2]);
+            o.rotation.set(0, THREE.MathUtils.degToRad(inst.rotY), 0);
+            city.add(o);
+            trams.push({ obj: o,
+                         dir: Math.cos(THREE.MathUtils.degToRad(inst.rotY)) });
+          });
+          self.el.sceneEl.trams = trams;
+          return;
+        }
+        // Chunk along the street, but only where it buys anything. A batch that
+        // spans the whole 250 m can never be frustum-culled, so every triangle
+        // in it is submitted every frame; a batch of two is a draw call that
+        // may as well have stayed a clone.
         var span = CHUNK_M * (list.length > 14 ? 1 : 1e6);
         var chunks = {};
         list.forEach(function (inst) {
@@ -162,22 +190,39 @@
           (chunks[c] = chunks[c] || []).push(inst);
         });
         Object.keys(chunks).forEach(function (c) {
-          calls += instanceBatch(models[asset], chunks[c], city);
+          batches += instanceBatch(root, chunks[c], city);
         });
-      });
+      }
 
-      this.el.sceneEl.walkables = walk;
-      this.el.sceneEl.trams = trams;
-      say('Kolkata street - ' + L.instances.length + ' placements in ' +
-          calls + ' batches. Click to look around.');
-      setTimeout(function () {
-        hud.style.transition = 'opacity 1.2s';
-        hud.style.opacity = '0';
-      }, 7000);
-      document.getElementById('views').hidden = false;
-      document.getElementById('keys').hidden = false;
-      buildViewMenu(L.viewpoints);
-      this.el.sceneEl.emit('city-ready');
+      return Promise.all(names.map(function (name) {
+        return new Promise(function (resolve, reject) {
+          loader.load(asset('models/' + name + ext), function (gltf) {
+            try { placeOne(name, gltf.scene); } catch (e) { reject(e); return; }
+            done++;
+            delete inflight[name];
+            setProgress(done, total);
+            resolve();
+          }, function (ev) {
+            if (ev && ev.total) { inflight[name] = ev.loaded / ev.total; }
+            setProgress(done, total);
+          }, function (err) {
+            reject(new Error('models/' + name + ext + ': ' +
+                             (err.message || err)));
+          });
+        });
+      })).then(function () {
+        hideProgress();
+        say('Kolkata street - ' + L.instances.length + ' placements in ' +
+            batches + ' batches. Drag to look around.');
+        setTimeout(function () {
+          hud.style.transition = 'opacity 1.2s';
+          hud.style.opacity = '0';
+        }, 7000);
+        document.getElementById('views').hidden = false;
+        document.getElementById('keys').hidden = false;
+        buildViewMenu(L.viewpoints);
+        self.el.sceneEl.emit('city-ready');
+      });
     }
   });
 

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Kolkata Street — WebXR</title>
+  <title>Kolkata Street - WebXR</title>
   <!-- Pinned A-Frame release, same one the museum floor uses.
        WebXR needs HTTPS; GitHub Pages provides it. -->
   <script src="https://aframe.io/releases/1.7.0/aframe.min.js"></script>
@@ -29,18 +29,31 @@
             font: 12px/1.5 system-ui, sans-serif; color: #c7cdd6;
             background: rgba(10,12,16,.72); border-radius: 8px; max-width: 54ch; }
     #keys b { color: #fff; }
+    #prog { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%);
+            z-index: 11; width: min(340px, 72vw); padding: 14px 16px 16px;
+            background: rgba(10,12,16,.82); border-radius: 10px;
+            font: 13px/1.4 system-ui, sans-serif; color: #fff; text-align: center; }
+    #prog-label { margin-bottom: 10px; }
+    #prog-track { height: 4px; background: rgba(255,255,255,.16); border-radius: 2px;
+                  overflow: hidden; }
+    #prog-fill { height: 100%; width: 1%; background: #ffcf7a; border-radius: 2px;
+                 transition: width .25s ease; }
     @media (max-width: 760px) { #views, #keys { display: none; } }
   </style>
 </head>
 <body>
-  <div id="hud">Loading the street…</div>
+  <div id="hud">Loading the street...</div>
+  <div id="prog" hidden>
+    <div id="prog-label">Loading the street</div>
+    <div id="prog-track"><div id="prog-fill"></div></div>
+  </div>
   <div id="views" hidden><h2>Viewpoints</h2></div>
   <div id="keys" hidden>
     <b>W A S D</b> walk &nbsp; <b>mouse</b> look &nbsp; <b>Shift</b> run &nbsp;
     <b>F</b> walk/fly &nbsp; <b>E Q</b> up/down &nbsp;
-    <b>1…0</b> viewpoints &nbsp; <b>V</b> next view &nbsp; <b>R</b> reset &nbsp;
+    <b>1...0</b> viewpoints &nbsp; <b>V</b> next view &nbsp; <b>R</b> reset &nbsp;
     <b>L</b> shadows &nbsp; <b>T</b> run the trams<br>
-    <b>In VR</b> — left stick walk, right stick snap-turn, trigger run,
+    <b>In VR</b> - left stick walk, right stick snap-turn, trigger run,
     <b>A</b> walk/fly, <b>X</b> next viewpoint, <b>B</b>/<b>Y</b> reset.
   </div>
 
@@ -88,6 +101,6 @@
     </a-entity>
   </a-scene>
 
-  <script src="street.js?v=1.00"></script>
+  <script src="street.js?v=1.01"></script>
 </body>
 </html>
