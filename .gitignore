@@ -8,3 +8,7 @@ build/build.log
 # The few images the README shows live in kolkata_street/gallery/ and are kept.
 /kolkata_street/build/*.log
 /kolkata_street/renders/
+# intermediate: the self-contained scene the web export reads
+/kolkata_street/scene/_flat.blend*
+# Blender's rolling backups
+*.blend1

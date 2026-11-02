@@ -139,9 +139,19 @@ def building(name, width, floors, depth=9.0, seed=1, ground_h=3.9, floor_h=3.25,
     """One terrace block: wall, shop at the bottom, floors of windows, parapet."""
     rnd = random.Random(seed)
     coll = S.coll(name)
+    # A per-building palette, not a free choice at every element.
+    # Each distinct material becomes its own glTF primitive and its own draw
+    # call in the browser, once per placement. Picking a shop colour afresh for
+    # every signboard took a terrace of forty-five buildings past a thousand
+    # draw calls looking down the street, which no headset will hold 72 Hz
+    # against. Two shop colours and two cloths per building keep the variety
+    # between buildings and halve the cost.
     plaster = rnd.choice(MAT['plaster'])
     shutter = rnd.choice(MAT['shutter'])
-    shop_col = rnd.choice(MAT['shop'])
+    shops = rnd.sample(MAT['shop'], 2)
+    cloths = rnd.sample(MAT['cloth'], 2)
+    awning_mat = rnd.choice([MAT['tarp'], MAT['tarp2'], MAT['tin']])
+    shop_col = shops[0]
     H = ground_h + floors * floor_h
     parapet_h = rnd.uniform(0.85, 1.35)
     p = []
@@ -181,18 +191,17 @@ def building(name, width, floors, depth=9.0, seed=1, ground_h=3.9, floor_h=3.25,
                                (cx + rnd.uniform(-op_w / 3, op_w / 3),
                                 rnd.uniform(0.25, 0.55), rnd.uniform(0.3, 0.9)),
                                name='goods', coll=coll,
-                               mat=rnd.choice(MAT['cloth'])))
+                               mat=rnd.choice(cloths)))
         # signboard over the opening
         p.append(M.box((bw - 0.2, 0.09, 0.62), (cx, -0.06, ground_h - 0.60),
-                       name='signboard', coll=coll, mat=rnd.choice(MAT['shop'])))
+                       name='signboard', coll=coll, mat=rnd.choice(shops)))
         if rnd.random() < 0.5:
             p.append(M.box((bw - 0.5, 0.03, 0.10), (cx, -0.12, ground_h - 0.60),
                            name='signtext', coll=coll, mat=MAT['white']))
         # awning or tarpaulin
         if rnd.random() < 0.55:
             p.append(M.box((bw - 0.3, 1.25, 0.04), (cx, -0.60, ground_h - 1.25),
-                           (0.30, 0, 0), name='awning', coll=coll,
-                           mat=rnd.choice([MAT['tarp'], MAT['tarp2'], MAT['tin']])))
+                           (0.30, 0, 0), name='awning', coll=coll, mat=awning_mat))
             for sx in (-1, 1):
                 p.append(M.cyl(0.018, 1.15, (cx + sx * (bw / 2 - 0.25), -1.05,
                                ground_h / 2 - 0.2), name='awnpost', coll=coll,

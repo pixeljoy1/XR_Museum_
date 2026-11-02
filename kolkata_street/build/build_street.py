@@ -21,6 +21,7 @@ the +Y side.
 Run:
     blender -b -P build/build_street.py                      # assemble and save
     blender -b -P build/build_street.py -- --append          # copy in rather than link
+    blender -b -P build/build_street.py -- --append --out scene/_flat.blend
     blender -b -P build/build_street.py -- --preview         # ... and render every shot
     blender -b -P build/build_street.py -- --preview --shot SHOT_02_wet_wide
 """
@@ -316,9 +317,12 @@ def place_street_life(kit, coll):
                    (x, sy * (ST['BUILD_Y'] - 0.6), ST['KERB_H'] + z),
                    (0, 0, 0 if sy > 0 else math.pi), into=coll)
 
+    # The crowd is kept deliberately thin. Each figure is five draw calls in the
+    # browser once per placement, and a stylised walk-on earns its keep as a
+    # silhouette in the middle distance, not as a mob.
     walk_y = ST['ROAD_HW'] + 0.30 + ST['WALK_W'] / 2
     spots = []
-    for i in range(34):
+    for i in range(20):
         sy = 1 if i % 2 else -1
         spots.append((rnd.uniform(ST['X0'] + 10, ST['X1'] - 20),
                       sy * (walk_y + rnd.uniform(-0.8, 0.8)), ST['KERB_H'],
@@ -458,7 +462,9 @@ SHOTS = [
     dict(name='SHOT_08_taxi_three_quarter', loc=(-24.0, -7.90, 1.10),
          aim=(-14.5, -5.00, 0.95), lens=50, fstop=2.2,
          note='Taxi close in three-quarter, the tram soft behind it.'),
-    dict(name='SHOT_09_crossing', loc=(10.0, 7.90, 1.70), aim=(-16.0, -2.00, 2.00),
+    # Poles stand every 23 m from x = -84, so x = 8 and x = 31 are occupied.
+    # Standing at 10 put one straight down the middle of the frame.
+    dict(name='SHOT_09_crossing', loc=(19.5, 7.85, 1.70), aim=(-14.0, -2.00, 2.00),
          lens=50, fstop=4.0,
          note='Looking back up the street from the far kerb, across both tracks.'),
     dict(name='SHOT_10_tram_rear', loc=(31.0, -5.60, 3.00), aim=(5.0, -1.90, 2.00),
@@ -527,7 +533,7 @@ def main():
     sc.render.use_persistent_data = True
 
     S.log('scene: %s' % S.stats())
-    S.save(os.path.join(S.SCENE, 'kolkata_street.blend'))
+    S.save(S.argval('--out', os.path.join(S.SCENE, 'kolkata_street.blend')))
 
     if S.has_flag('--preview'):
         only = S.argval('--shot', None)

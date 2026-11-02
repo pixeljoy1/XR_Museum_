@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Kolkata Street — WebXR</title>
+  <!-- Pinned A-Frame release, same one the museum floor uses.
+       WebXR needs HTTPS; GitHub Pages provides it. -->
+  <script src="https://aframe.io/releases/1.7.0/aframe.min.js"></script>
+  <style>
+    html, body { margin: 0; background: #0b0c0e; }
+    #hud { position: fixed; left: 12px; top: 12px; z-index: 10; padding: 8px 12px;
+           font: 13px/1.45 system-ui, -apple-system, sans-serif; color: #fff;
+           background: rgba(10,12,16,.72); border-radius: 8px; max-width: 42ch;
+           pointer-events: none; }
+    #hud.error { background: #8d1b16; }
+    #hud b { color: #ffcf7a; font-weight: 600; }
+    #views { position: fixed; right: 12px; top: 12px; z-index: 10; width: 260px;
+             font: 12px/1.4 system-ui, sans-serif; color: #fff;
+             background: rgba(10,12,16,.72); border-radius: 8px; overflow: hidden; }
+    #views h2 { margin: 0; padding: 8px 12px 6px; font-size: 12px; letter-spacing: .06em;
+                text-transform: uppercase; color: #ffcf7a; font-weight: 600; }
+    #views button { display: block; width: 100%; text-align: left; padding: 6px 12px;
+                    font: inherit; color: #fff; background: none; border: 0;
+                    border-top: 1px solid rgba(255,255,255,.08); cursor: pointer; }
+    #views button:hover { background: rgba(255,255,255,.12); }
+    #views button span { color: #9aa6b4; }
+    #keys { position: fixed; left: 12px; bottom: 12px; z-index: 10; padding: 8px 12px;
+            font: 12px/1.5 system-ui, sans-serif; color: #c7cdd6;
+            background: rgba(10,12,16,.72); border-radius: 8px; max-width: 54ch; }
+    #keys b { color: #fff; }
+    @media (max-width: 760px) { #views, #keys { display: none; } }
+  </style>
+</head>
+<body>
+  <div id="hud">Loading the street…</div>
+  <div id="views" hidden><h2>Viewpoints</h2></div>
+  <div id="keys" hidden>
+    <b>W A S D</b> walk &nbsp; <b>mouse</b> look &nbsp; <b>Shift</b> run &nbsp;
+    <b>F</b> walk/fly &nbsp; <b>E Q</b> up/down &nbsp;
+    <b>1…0</b> viewpoints &nbsp; <b>V</b> next view &nbsp; <b>R</b> reset &nbsp;
+    <b>L</b> shadows &nbsp; <b>T</b> run the trams<br>
+    <b>In VR</b> — left stick walk, right stick snap-turn, trigger run,
+    <b>A</b> walk/fly, <b>X</b> next viewpoint, <b>B</b>/<b>Y</b> reset.
+  </div>
+
+  <a-scene
+      renderer="colorManagement: true; antialias: true; toneMapping: ACESFilmic;
+                highRefreshRate: true"
+      fog="type: linear; color: #ccd3dc; near: 26; far: 235"
+      background="color: #d7dde4"
+      street-environment
+      city-builder="src: layout.json"
+      vr-mode-ui="enterVRButton: #enterVR"
+      shadow="type: pcfsoft">
+
+    <!-- Monsoon overcast: a big soft key from the north-west and a strong sky fill.
+         Matches the Blender sun at 56 deg from vertical, 118 deg round. -->
+    <a-entity light="type: hemisphere; color: #d8e1ec; groundColor: #4c463c;
+                     intensity: 2.2"></a-entity>
+    <a-entity id="sun"
+              light="type: directional; color: #fff4e4; intensity: 2.1;
+                     castShadow: true; shadowMapWidth: 2048; shadowMapHeight: 2048;
+                     shadowCameraLeft: -46; shadowCameraRight: 46;
+                     shadowCameraTop: 46; shadowCameraBottom: -46;
+                     shadowCameraFar: 220; shadowBias: -0.0012"
+              position="73 56 -39"></a-entity>
+
+    <!-- Everything placed from layout.json goes in here. -->
+    <a-entity id="city"></a-entity>
+
+    <!-- The rig. The camera sits at eye height above it; the rig is what moves. -->
+    <a-entity id="rig" position="-25 0 4.6" street-rig>
+      <a-entity id="head" camera="near: 0.05; far: 265" position="0 1.62 0"
+                look-controls="pointerLockEnabled: true; magicWindowTrackingEnabled: true"
+                wasd-controls="enabled: false">
+        <a-entity id="helppanel" position="0 0 -1.15" visible="false">
+          <a-plane width="1.26" height="0.60" color="#0b0e12" opacity="0.86"
+                   material="shader: flat"></a-plane>
+          <a-text id="helptext" value="" align="center" width="1.15"
+                  color="#e8edf4" position="0 0 0.01"></a-text>
+        </a-entity>
+      </a-entity>
+      <a-entity id="handL" meta-touch-controls="hand: left"
+                oculus-touch-controls="hand: left" vr-input="hand: left"></a-entity>
+      <a-entity id="handR" meta-touch-controls="hand: right"
+                oculus-touch-controls="hand: right" vr-input="hand: right"></a-entity>
+    </a-entity>
+  </a-scene>
+
+  <script src="street.js?v=1.00"></script>
+</body>
+</html>

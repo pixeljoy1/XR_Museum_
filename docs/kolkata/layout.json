@@ -1,0 +1,1268 @@
+{
+ "generated_by": "kolkata_street/build/export_web.py",
+ "units": "metres, glTF Y-up",
+ "assets": [
+  "AMBASSADOR_TAXI",
+  "KIT_AUTO",
+  "KIT_BLDG_A",
+  "KIT_BLDG_B",
+  "KIT_BLDG_C",
+  "KIT_BLDG_D",
+  "KIT_BLDG_E",
+  "KIT_BLDG_F",
+  "KIT_FIGURE_0",
+  "KIT_FIGURE_1",
+  "KIT_FIGURE_2",
+  "KIT_FIGURE_3",
+  "KIT_FIGURE_4",
+  "KIT_FIGURE_5",
+  "KIT_FIGURE_6",
+  "KIT_FIGURE_7",
+  "KIT_HANDCART",
+  "KIT_HOARDING",
+  "KIT_MOSQUE",
+  "KIT_SHED",
+  "KIT_TRAMPOLE",
+  "KIT_TREE_BIG",
+  "KIT_TREE_SMALL",
+  "TRAM_CTC",
+  "ground"
+ ],
+ "instances": [
+  {
+   "asset": "KIT_AUTO",
+   "pos": [
+    -30.0,
+    0.0162,
+    6.2
+   ],
+   "rotY": 180.0
+  },
+  {
+   "asset": "KIT_AUTO",
+   "pos": [
+    22.0,
+    0.018,
+    -6.1
+   ],
+   "rotY": 0.0
+  },
+  {
+   "asset": "KIT_BLDG_A",
+   "pos": [
+    -84.03,
+    0.0,
+    -9.4
+   ],
+   "rotY": 0.0
+  },
+  {
+   "asset": "KIT_BLDG_B",
+   "pos": [
+    -73.72,
+    0.0,
+    -9.4
+   ],
+   "rotY": 0.0
+  },
+  {
+   "asset": "KIT_BLDG_E",
+   "pos": [
+    23.22,
+    0.0,
+    -9.4
+   ],
+   "rotY": 0.0
+  },
+  {
+   "asset": "KIT_BLDG_F",
+   "pos": [
+    35.08,
+    0.0,
+    -9.4
+   ],
+   "rotY": 0.0
+  },
+  {
+   "asset": "KIT_BLDG_A",
+   "pos": [
+    47.69,
+    0.0,
+    -9.4
+   ],
+   "rotY": 0.0
+  },
+  {
+   "asset": "KIT_BLDG_B",
+   "pos": [
+    58.0,
+    0.0,
+    -9.4
+   ],
+   "rotY": 0.0
+  },
+  {
+   "asset": "KIT_BLDG_C",
+   "pos": [
+    69.56,
+    0.0,
+    -9.4
+   ],
+   "rotY": 0.0
+  },
+  {
+   "asset": "KIT_BLDG_D",
+   "pos": [
+    80.32,
+    0.0,
+    -9.4
+   ],
+   "rotY": 0.0
+  },
+  {
+   "asset": "KIT_BLDG_E",
+   "pos": [
+    89.08,
+    0.0,
+    -9.4
+   ],
+   "rotY": 0.0
+  },
+  {
+   "asset": "KIT_BLDG_F",
+   "pos": [
+    100.94,
+    0.0,
+    -9.4
+   ],
+   "rotY": 0.0
+  },
+  {
+   "asset": "KIT_BLDG_A",
+   "pos": [
+    113.55,
+    0.0,
+    -9.4
+   ],
+   "rotY": 0.0
+  },
+  {
+   "asset": "KIT_BLDG_B",
+   "pos": [
+    123.86,
+    0.0,
+    -9.4
+   ],
+   "rotY": 0.0
+  },
+  {
+   "asset": "KIT_BLDG_C",
+   "pos": [
+    -62.16,
+    0.0,
+    -9.4
+   ],
+   "rotY": 0.0
+  },
+  {
+   "asset": "KIT_BLDG_C",
+   "pos": [
+    135.42,
+    0.0,
+    -9.4
+   ],
+   "rotY": 0.0
+  },
+  {
+   "asset": "KIT_BLDG_D",
+   "pos": [
+    146.18,
+    0.0,
+    -9.4
+   ],
+   "rotY": 0.0
+  },
+  {
+   "asset": "KIT_BLDG_E",
+   "pos": [
+    154.94,
+    0.0,
+    -9.4
+   ],
+   "rotY": 0.0
+  },
+  {
+   "asset": "KIT_BLDG_D",
+   "pos": [
+    -51.4,
+    0.0,
+    -9.4
+   ],
+   "rotY": 0.0
+  },
+  {
+   "asset": "KIT_BLDG_E",
+   "pos": [
+    -42.64,
+    0.0,
+    -9.4
+   ],
+   "rotY": 0.0
+  },
+  {
+   "asset": "KIT_BLDG_F",
+   "pos": [
+    -30.78,
+    0.0,
+    -9.4
+   ],
+   "rotY": 0.0
+  },
+  {
+   "asset": "KIT_BLDG_A",
+   "pos": [
+    -18.17,
+    0.0,
+    -9.4
+   ],
+   "rotY": 0.0
+  },
+  {
+   "asset": "KIT_BLDG_B",
+   "pos": [
+    -7.86,
+    0.0,
+    -9.4
+   ],
+   "rotY": 0.0
+  },
+  {
+   "asset": "KIT_BLDG_C",
+   "pos": [
+    3.7,
+    0.0,
+    -9.4
+   ],
+   "rotY": 0.0
+  },
+  {
+   "asset": "KIT_BLDG_D",
+   "pos": [
+    14.46,
+    0.0,
+    -9.4
+   ],
+   "rotY": 0.0
+  },
+  {
+   "asset": "KIT_BLDG_D",
+   "pos": [
+    -86.48,
+    0.0,
+    9.4
+   ],
+   "rotY": 180.0
+  },
+  {
+   "asset": "KIT_BLDG_E",
+   "pos": [
+    -77.72,
+    0.0,
+    9.4
+   ],
+   "rotY": 180.0
+  },
+  {
+   "asset": "KIT_BLDG_B",
+   "pos": [
+    22.92,
+    0.0,
+    9.4
+   ],
+   "rotY": 180.0
+  },
+  {
+   "asset": "KIT_BLDG_C",
+   "pos": [
+    34.48,
+    0.0,
+    9.4
+   ],
+   "rotY": 180.0
+  },
+  {
+   "asset": "KIT_BLDG_D",
+   "pos": [
+    45.24,
+    0.0,
+    9.4
+   ],
+   "rotY": 180.0
+  },
+  {
+   "asset": "KIT_BLDG_E",
+   "pos": [
+    54.0,
+    0.0,
+    9.4
+   ],
+   "rotY": 180.0
+  },
+  {
+   "asset": "KIT_BLDG_F",
+   "pos": [
+    65.86,
+    0.0,
+    9.4
+   ],
+   "rotY": 180.0
+  },
+  {
+   "asset": "KIT_BLDG_A",
+   "pos": [
+    78.47,
+    0.0,
+    9.4
+   ],
+   "rotY": 180.0
+  },
+  {
+   "asset": "KIT_BLDG_B",
+   "pos": [
+    88.78,
+    0.0,
+    9.4
+   ],
+   "rotY": 180.0
+  },
+  {
+   "asset": "KIT_BLDG_C",
+   "pos": [
+    100.34,
+    0.0,
+    9.4
+   ],
+   "rotY": 180.0
+  },
+  {
+   "asset": "KIT_BLDG_D",
+   "pos": [
+    111.1,
+    0.0,
+    9.4
+   ],
+   "rotY": 180.0
+  },
+  {
+   "asset": "KIT_BLDG_E",
+   "pos": [
+    119.86,
+    0.0,
+    9.4
+   ],
+   "rotY": 180.0
+  },
+  {
+   "asset": "KIT_BLDG_F",
+   "pos": [
+    -65.86,
+    0.0,
+    9.4
+   ],
+   "rotY": 180.0
+  },
+  {
+   "asset": "KIT_BLDG_F",
+   "pos": [
+    131.72,
+    0.0,
+    9.4
+   ],
+   "rotY": 180.0
+  },
+  {
+   "asset": "KIT_BLDG_A",
+   "pos": [
+    144.33,
+    0.0,
+    9.4
+   ],
+   "rotY": 180.0
+  },
+  {
+   "asset": "KIT_BLDG_A",
+   "pos": [
+    -53.25,
+    0.0,
+    9.4
+   ],
+   "rotY": 180.0
+  },
+  {
+   "asset": "KIT_BLDG_B",
+   "pos": [
+    -42.94,
+    0.0,
+    9.4
+   ],
+   "rotY": 180.0
+  },
+  {
+   "asset": "KIT_BLDG_C",
+   "pos": [
+    -31.38,
+    0.0,
+    9.4
+   ],
+   "rotY": 180.0
+  },
+  {
+   "asset": "KIT_BLDG_D",
+   "pos": [
+    -20.62,
+    0.0,
+    9.4
+   ],
+   "rotY": 180.0
+  },
+  {
+   "asset": "KIT_BLDG_E",
+   "pos": [
+    -11.86,
+    0.0,
+    9.4
+   ],
+   "rotY": 180.0
+  },
+  {
+   "asset": "KIT_BLDG_F",
+   "pos": [
+    -0.0,
+    0.0,
+    9.4
+   ],
+   "rotY": 180.0
+  },
+  {
+   "asset": "KIT_BLDG_A",
+   "pos": [
+    12.61,
+    0.0,
+    9.4
+   ],
+   "rotY": 180.0
+  },
+  {
+   "asset": "KIT_BLDG_F",
+   "pos": [
+    177.0,
+    0.0,
+    20.0
+   ],
+   "rotY": -90.0
+  },
+  {
+   "asset": "KIT_BLDG_C",
+   "pos": [
+    177.0,
+    0.0,
+    -20.0
+   ],
+   "rotY": -90.0
+  },
+  {
+   "asset": "KIT_FIGURE_2",
+   "pos": [
+    76.8706,
+    0.155,
+    7.7151
+   ],
+   "rotY": 218.032
+  },
+  {
+   "asset": "KIT_FIGURE_1",
+   "pos": [
+    20.8025,
+    0.155,
+    -8.3762
+   ],
+   "rotY": 292.218
+  },
+  {
+   "asset": "KIT_FIGURE_5",
+   "pos": [
+    49.5605,
+    0.155,
+    8.7361
+   ],
+   "rotY": 125.144
+  },
+  {
+   "asset": "KIT_FIGURE_1",
+   "pos": [
+    110.9949,
+    0.155,
+    -7.8935
+   ],
+   "rotY": 186.726
+  },
+  {
+   "asset": "KIT_FIGURE_7",
+   "pos": [
+    94.0151,
+    0.155,
+    8.7937
+   ],
+   "rotY": 164.053
+  },
+  {
+   "asset": "KIT_FIGURE_3",
+   "pos": [
+    42.9162,
+    0.155,
+    -7.8321
+   ],
+   "rotY": 280.314
+  },
+  {
+   "asset": "KIT_FIGURE_6",
+   "pos": [
+    -61.548,
+    0.155,
+    8.4917
+   ],
+   "rotY": 112.272
+  },
+  {
+   "asset": "KIT_FIGURE_5",
+   "pos": [
+    78.1914,
+    0.155,
+    -8.0617
+   ],
+   "rotY": 116.941
+  },
+  {
+   "asset": "KIT_FIGURE_5",
+   "pos": [
+    26.3171,
+    0.155,
+    8.2307
+   ],
+   "rotY": 326.392
+  },
+  {
+   "asset": "KIT_FIGURE_0",
+   "pos": [
+    72.0082,
+    0.155,
+    -9.0716
+   ],
+   "rotY": 145.031
+  },
+  {
+   "asset": "KIT_FIGURE_6",
+   "pos": [
+    -42.8839,
+    0.155,
+    8.9902
+   ],
+   "rotY": 79.221
+  },
+  {
+   "asset": "KIT_FIGURE_2",
+   "pos": [
+    64.7238,
+    0.155,
+    -8.2577
+   ],
+   "rotY": 283.243
+  },
+  {
+   "asset": "KIT_FIGURE_4",
+   "pos": [
+    109.4467,
+    0.155,
+    9.2664
+   ],
+   "rotY": 358.67
+  },
+  {
+   "asset": "KIT_FIGURE_0",
+   "pos": [
+    61.3749,
+    0.0697,
+    1.1558
+   ],
+   "rotY": 137.316
+  },
+  {
+   "asset": "KIT_FIGURE_4",
+   "pos": [
+    58.1236,
+    0.045,
+    4.424
+   ],
+   "rotY": 236.343
+  },
+  {
+   "asset": "KIT_FIGURE_4",
+   "pos": [
+    32.452,
+    0.0402,
+    4.7669
+   ],
+   "rotY": 300.68
+  },
+  {
+   "asset": "KIT_FIGURE_2",
+   "pos": [
+    63.4237,
+    0.0695,
+    2.3036
+   ],
+   "rotY": 159.921
+  },
+  {
+   "asset": "KIT_FIGURE_5",
+   "pos": [
+    51.8513,
+    0.0435,
+    4.5394
+   ],
+   "rotY": 84.303
+  },
+  {
+   "asset": "KIT_FIGURE_4",
+   "pos": [
+    -44.1141,
+    0.155,
+    -8.5259
+   ],
+   "rotY": 64.632
+  },
+  {
+   "asset": "KIT_FIGURE_7",
+   "pos": [
+    33.2102,
+    0.155,
+    7.9623
+   ],
+   "rotY": 319.227
+  },
+  {
+   "asset": "KIT_FIGURE_6",
+   "pos": [
+    28.1484,
+    0.155,
+    -9.1117
+   ],
+   "rotY": 231.508
+  },
+  {
+   "asset": "KIT_FIGURE_6",
+   "pos": [
+    -79.5815,
+    0.155,
+    8.2993
+   ],
+   "rotY": 132.412
+  },
+  {
+   "asset": "KIT_FIGURE_0",
+   "pos": [
+    -34.5998,
+    0.155,
+    -7.9468
+   ],
+   "rotY": 219.495
+  },
+  {
+   "asset": "KIT_FIGURE_5",
+   "pos": [
+    -53.4299,
+    0.155,
+    9.2761
+   ],
+   "rotY": 174.355
+  },
+  {
+   "asset": "KIT_FIGURE_6",
+   "pos": [
+    103.5352,
+    0.155,
+    -8.8626
+   ],
+   "rotY": 137.162
+  },
+  {
+   "asset": "KIT_HANDCART",
+   "pos": [
+    -36.0,
+    0.0133,
+    6.35
+   ],
+   "rotY": 186.875
+  },
+  {
+   "asset": "KIT_HOARDING",
+   "pos": [
+    -40.0,
+    0.155,
+    8.8
+   ],
+   "rotY": 180.0
+  },
+  {
+   "asset": "KIT_HOARDING",
+   "pos": [
+    23.0,
+    0.155,
+    -8.8
+   ],
+   "rotY": 0.0
+  },
+  {
+   "asset": "KIT_MOSQUE",
+   "pos": [
+    166.0,
+    0.0,
+    -0.0
+   ],
+   "rotY": -90.0
+  },
+  {
+   "asset": "KIT_TRAMPOLE",
+   "pos": [
+    123.0,
+    0.155,
+    7.35
+   ],
+   "rotY": 180.0
+  },
+  {
+   "asset": "KIT_TRAMPOLE",
+   "pos": [
+    123.0,
+    0.155,
+    -7.35
+   ],
+   "rotY": 0.0
+  },
+  {
+   "asset": "KIT_TRAMPOLE",
+   "pos": [
+    146.0,
+    0.155,
+    7.35
+   ],
+   "rotY": 180.0
+  },
+  {
+   "asset": "KIT_TRAMPOLE",
+   "pos": [
+    146.0,
+    0.155,
+    -7.35
+   ],
+   "rotY": 0.0
+  },
+  {
+   "asset": "KIT_TRAMPOLE",
+   "pos": [
+    -84.0,
+    0.155,
+    7.35
+   ],
+   "rotY": 180.0
+  },
+  {
+   "asset": "KIT_TRAMPOLE",
+   "pos": [
+    -84.0,
+    0.155,
+    -7.35
+   ],
+   "rotY": 0.0
+  },
+  {
+   "asset": "KIT_TRAMPOLE",
+   "pos": [
+    -61.0,
+    0.155,
+    7.35
+   ],
+   "rotY": 180.0
+  },
+  {
+   "asset": "KIT_TRAMPOLE",
+   "pos": [
+    -61.0,
+    0.155,
+    -7.35
+   ],
+   "rotY": 0.0
+  },
+  {
+   "asset": "KIT_TRAMPOLE",
+   "pos": [
+    -38.0,
+    0.155,
+    7.35
+   ],
+   "rotY": 180.0
+  },
+  {
+   "asset": "KIT_TRAMPOLE",
+   "pos": [
+    -38.0,
+    0.155,
+    -7.35
+   ],
+   "rotY": 0.0
+  },
+  {
+   "asset": "KIT_TRAMPOLE",
+   "pos": [
+    -15.0,
+    0.155,
+    7.35
+   ],
+   "rotY": 180.0
+  },
+  {
+   "asset": "KIT_TRAMPOLE",
+   "pos": [
+    -15.0,
+    0.155,
+    -7.35
+   ],
+   "rotY": 0.0
+  },
+  {
+   "asset": "KIT_TRAMPOLE",
+   "pos": [
+    8.0,
+    0.155,
+    7.35
+   ],
+   "rotY": 180.0
+  },
+  {
+   "asset": "KIT_TRAMPOLE",
+   "pos": [
+    8.0,
+    0.155,
+    -7.35
+   ],
+   "rotY": 0.0
+  },
+  {
+   "asset": "KIT_TRAMPOLE",
+   "pos": [
+    31.0,
+    0.155,
+    7.35
+   ],
+   "rotY": 180.0
+  },
+  {
+   "asset": "KIT_TRAMPOLE",
+   "pos": [
+    31.0,
+    0.155,
+    -7.35
+   ],
+   "rotY": 0.0
+  },
+  {
+   "asset": "KIT_TRAMPOLE",
+   "pos": [
+    54.0,
+    0.155,
+    7.35
+   ],
+   "rotY": 180.0
+  },
+  {
+   "asset": "KIT_TRAMPOLE",
+   "pos": [
+    54.0,
+    0.155,
+    -7.35
+   ],
+   "rotY": 0.0
+  },
+  {
+   "asset": "KIT_TRAMPOLE",
+   "pos": [
+    77.0,
+    0.155,
+    7.35
+   ],
+   "rotY": 180.0
+  },
+  {
+   "asset": "KIT_TRAMPOLE",
+   "pos": [
+    77.0,
+    0.155,
+    -7.35
+   ],
+   "rotY": 0.0
+  },
+  {
+   "asset": "KIT_TRAMPOLE",
+   "pos": [
+    100.0,
+    0.155,
+    7.35
+   ],
+   "rotY": 180.0
+  },
+  {
+   "asset": "KIT_TRAMPOLE",
+   "pos": [
+    100.0,
+    0.155,
+    -7.35
+   ],
+   "rotY": 0.0
+  },
+  {
+   "asset": "KIT_SHED",
+   "pos": [
+    -33.0,
+    0.155,
+    -8.1
+   ],
+   "rotY": 0.0
+  },
+  {
+   "asset": "KIT_SHED",
+   "pos": [
+    5.0,
+    0.155,
+    8.1
+   ],
+   "rotY": 180.0
+  },
+  {
+   "asset": "KIT_SHED",
+   "pos": [
+    52.0,
+    0.155,
+    -8.1
+   ],
+   "rotY": 0.0
+  },
+  {
+   "asset": "KIT_SHED",
+   "pos": [
+    72.0,
+    0.155,
+    8.1
+   ],
+   "rotY": 180.0
+  },
+  {
+   "asset": "AMBASSADOR_TAXI",
+   "pos": [
+    -14.0,
+    0.0367,
+    5.0
+   ],
+   "rotY": 180.8
+  },
+  {
+   "asset": "AMBASSADOR_TAXI",
+   "pos": [
+    5.5,
+    0.0328,
+    5.25
+   ],
+   "rotY": 179.428
+  },
+  {
+   "asset": "AMBASSADOR_TAXI",
+   "pos": [
+    27.0,
+    0.0397,
+    4.8
+   ],
+   "rotY": 179.18
+  },
+  {
+   "asset": "AMBASSADOR_TAXI",
+   "pos": [
+    59.0,
+    0.0352,
+    5.1
+   ],
+   "rotY": 178.424
+  },
+  {
+   "asset": "AMBASSADOR_TAXI",
+   "pos": [
+    -22.0,
+    0.039,
+    -4.85
+   ],
+   "rotY": 0.319
+  },
+  {
+   "asset": "AMBASSADOR_TAXI",
+   "pos": [
+    12.0,
+    0.0336,
+    -5.2
+   ],
+   "rotY": 0.987
+  },
+  {
+   "asset": "AMBASSADOR_TAXI",
+   "pos": [
+    38.0,
+    0.0412,
+    -4.7
+   ],
+   "rotY": -1.161
+  },
+  {
+   "asset": "AMBASSADOR_TAXI",
+   "pos": [
+    76.0,
+    0.036,
+    -5.05
+   ],
+   "rotY": -0.712
+  },
+  {
+   "asset": "TRAM_CTC",
+   "pos": [
+    54.0,
+    0.0695,
+    -1.9
+   ],
+   "rotY": 0.0
+  },
+  {
+   "asset": "TRAM_CTC",
+   "pos": [
+    7.0,
+    0.0695,
+    1.9
+   ],
+   "rotY": 180.0
+  },
+  {
+   "asset": "KIT_TREE_BIG",
+   "pos": [
+    -14.0,
+    0.155,
+    8.3
+   ],
+   "rotY": 194.721
+  },
+  {
+   "asset": "KIT_TREE_SMALL",
+   "pos": [
+    -46.0,
+    0.155,
+    -8.3
+   ],
+   "rotY": 67.897
+  },
+  {
+   "asset": "KIT_TREE_SMALL",
+   "pos": [
+    41.0,
+    0.155,
+    -8.3
+   ],
+   "rotY": 128.535
+  },
+  {
+   "asset": "KIT_TREE_BIG",
+   "pos": [
+    96.0,
+    0.155,
+    8.3
+   ],
+   "rotY": 350.014
+  }
+ ],
+ "viewpoints": [
+  {
+   "name": "SHOT_01_tram_nose",
+   "label": "tram nose",
+   "lens": 85.0,
+   "note": "Low and long, the tram coming at you, like the first watercolour.",
+   "pos": [
+    -25.0,
+    1.3,
+    4.6
+   ],
+   "aim": [
+    -1.0,
+    1.95,
+    2.2
+   ]
+  },
+  {
+   "name": "SHOT_02_wet_wide",
+   "label": "wet wide",
+   "lens": 24.0,
+   "note": "Wide, standing in the road, the whole wet street and the reflections.",
+   "pos": [
+    -16.0,
+    1.6,
+    -3.2
+   ],
+   "aim": [
+    16.0,
+    2.3,
+    1.0
+   ]
+  },
+  {
+   "name": "SHOT_03_telephoto_vista",
+   "label": "telephoto vista",
+   "lens": 200.0,
+   "note": "Compressed down the street, traffic stacked, the dome closing it.",
+   "pos": [
+    -44.0,
+    1.6,
+    -0.6
+   ],
+   "aim": [
+    120.0,
+    9.0,
+    0.1
+   ]
+  },
+  {
+   "name": "SHOT_04_puddle",
+   "label": "puddle",
+   "lens": 35.0,
+   "note": "A hand-span above the road: the reflection is the subject.",
+   "pos": [
+    -11.0,
+    0.22,
+    4.4
+   ],
+   "aim": [
+    13.0,
+    2.4,
+    2.0
+   ]
+  },
+  {
+   "name": "SHOT_05_balcony",
+   "label": "balcony",
+   "lens": 50.0,
+   "note": "From a second-floor balcony, looking down into the traffic.",
+   "pos": [
+    -18.0,
+    8.2,
+    8.9
+   ],
+   "aim": [
+    10.0,
+    1.0,
+    -0.0
+   ]
+  },
+  {
+   "name": "SHOT_06_pavement",
+   "label": "pavement",
+   "lens": 35.0,
+   "note": "Pedestrian eye level on the footpath, under the awnings.",
+   "pos": [
+    -6.0,
+    1.62,
+    8.4
+   ],
+   "aim": [
+    26.0,
+    2.2,
+    2.5
+   ]
+  },
+  {
+   "name": "SHOT_07_under_wires",
+   "label": "under wires",
+   "lens": 28.0,
+   "note": "Up among the trolley wire and the cable, looking down the line.",
+   "pos": [
+    -10.0,
+    4.9,
+    -0.0
+   ],
+   "aim": [
+    80.0,
+    5.7,
+    -0.0
+   ]
+  },
+  {
+   "name": "SHOT_08_taxi_three_quarter",
+   "label": "taxi three quarter",
+   "lens": 50.0,
+   "note": "Taxi close in three-quarter, the tram soft behind it.",
+   "pos": [
+    -24.0,
+    1.1,
+    7.9
+   ],
+   "aim": [
+    -14.5,
+    0.95,
+    5.0
+   ]
+  },
+  {
+   "name": "SHOT_09_crossing",
+   "label": "crossing",
+   "lens": 50.0,
+   "note": "Looking back up the street from the far kerb, across both tracks.",
+   "pos": [
+    10.0,
+    1.7,
+    -7.9
+   ],
+   "aim": [
+    -16.0,
+    2.0,
+    2.0
+   ]
+  },
+  {
+   "name": "SHOT_10_tram_rear",
+   "label": "tram rear",
+   "lens": 70.0,
+   "note": "Behind and above the near tram, the street opening out past it.",
+   "pos": [
+    31.0,
+    3.0,
+    5.6
+   ],
+   "aim": [
+    5.0,
+    2.0,
+    1.9
+   ]
+  }
+ ],
+ "tram_asset": "TRAM_CTC",
+ "track_y": [
+  -1.9,
+  1.9
+ ],
+ "street": {
+  "x0": -90.0,
+  "x1": 158.0,
+  "road_half_width": 7.0,
+  "kerb_h": 0.155
+ }
+}

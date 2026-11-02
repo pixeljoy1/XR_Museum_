@@ -307,3 +307,60 @@ the "Old Tram" model that the cab front follows.
 - [CTC: about](https://www.calcuttatramways.com/about-ctc/) — two compartments, seating
 - [Ambassador specifications](https://www.cardekho.com/overview/Ambassador/Ambassador_Classic_Nova_Petrol.htm) — dimensions
 - ["Old Tram" by FOXYSCA](https://sketchfab.com/3d-models/old-tram-9d8bdac6310a46ef9cc2aaf0f9c9768a) — the cab front reference
+
+## Run it in the browser (WebXR)
+
+The street is also a WebXR page, in `docs/kolkata/`, alongside the museum floor.
+It works on a desktop browser and in a headset.
+
+```bash
+cd docs && python3 -m http.server 4210
+# then open http://localhost:4210/kolkata/
+```
+
+On GitHub Pages (serving `docs/`) it is at `<pages-url>/kolkata/`. WebXR needs
+HTTPS, which Pages provides; `localhost` is also treated as a secure context, so
+the desktop view works locally without a certificate.
+
+| | |
+|---|---|
+| Desktop | `W A S D` walk, mouse look, `Shift` run, `F` walk/fly, `E`/`Q` up and down, `1`…`0` viewpoints, `V` next, `R` reset, `L` shadows, `T` run the trams |
+| Headset | left stick walk, right stick snap-turn, trigger run, `A` walk/fly, `X` next viewpoint, `B`/`Y` reset |
+
+The ten Blender cameras come through as **viewpoints** — the same positions,
+lenses and headings, listed down the right-hand side. That is the point of the
+project: jump between them, then walk off and find your own.
+
+### How it is put together
+
+`build/export_web.py` writes one GLB per asset plus a `layout.json` of
+placements — the same "model once, instance many" idea as the Blender scene. The
+page fetches and parses each GLB **once** and batches the placements into
+`THREE.InstancedMesh`, chunked along the street so frustum culling still works.
+
+That matters more than it sounds. Pointing 118 `<a-entity gltf-model>` tags at
+the same files parses every file again for every placement, and a terrace of
+forty-five buildings becomes over a thousand draw calls looking down the street.
+Measured in the browser:
+
+| | draw calls | triangles/frame |
+|---|---|---|
+| a clone per placement | 1040 | 743k |
+| + one palette per building | 913 | 744k |
+| + merge look-alike materials on export | 874 | 736k |
+| + instanced batches, chunked | **327** | 866k |
+
+Instancing trades triangles for draw calls — a batch is culled as a unit — which
+is the right trade on a headset. `CHUNK_M` in `street.js` is the dial.
+
+Three things are deliberately not carried over to the web build:
+
+- **Procedural materials.** glTF cannot hold them, so `export_web.py` walks each
+  node tree to a representative flat colour. Detail is lost; colour is not. The
+  wet carriageway is restored in the page instead — near-black, low roughness,
+  against a gradient environment map, which is the same Fresnel-at-a-grazing-
+  angle effect that does the work in Cycles.
+- **Glass.** glTF transmission is patchy across viewers, so glazing becomes a
+  dark, mostly-opaque pane. It reads correctly at street scale.
+- **Shadows in VR.** The shadow pass is dropped on entering immersive mode and
+  restored on exit (`L` toggles it by hand).
