@@ -197,14 +197,61 @@ that closes the view down the street.
 - **Overhead** — traction poles every 23 m, the 550 V trolley wire over each
   track, span wires, and the thicket of telecom and power cable that is half of
   what a Kolkata street actually looks like. Every wire sags.
-- **Weather** — a hazy overcast sky, a big soft sun, a thin uniform fog so
-  distance reads as distance, and the wet-asphalt material.
+- **Weather** — a hazy overcast sky, a big soft sun, and depth haze from the
+  **mist pass in the compositor**, not a world volume. A world volume in Cycles
+  is unbounded, so light from a sun — which is infinitely far away — is
+  extinguished over an infinite path and the whole scene renders black. The mist
+  pass gives the same aerial perspective for nothing, with no volume noise, and
+  `add_mist_haze(start, depth, colour, strength)` can be re-dialled in the
+  compositor without re-rendering.
 
 `wet_asphalt` is the most important material in the scene and the one worth
 tuning first. Dry asphalt is near-black and rough; where a puddle sits, roughness
 collapses to a mirror and the surface darkens. `ST['WET']` runs 0 (dry) to 1
 (sheet water). That contrast is what makes the references read as monsoon
 Kolkata.
+
+The track band uses **the same material**, with the sett joints as bump only.
+That is not laziness. At grazing incidence — which is what a camera 1.6 m above
+a road sees at fifty metres — Fresnel reflectance goes to 1 whatever the base
+colour, so a separate, slightly glossier stone material turns the whole track
+into a sheet of white sky and reads as a pavement running down the middle of the
+carriageway. Same wetness, same puddles, joints in the bump, and then the rails
+are the only bright lines — which is what the photographs show.
+
+All of it is driven from **world-space** coordinates (the Geometry node's
+Position), not Generated. Generated is normalised to each object's own bounding
+box, so the road and the track band — two different objects — would otherwise
+get two unrelated puddle fields meeting along a hard edge.
+
+## Things that bit, and are fixed
+
+Worth knowing if you extend this, because they are all silent failures:
+
+- **A world volume blacks out the scene.** It is unbounded, so the sun's light is
+  extinguished over an infinite path. Haze is a mist pass instead.
+- **`wm.link` also puts the linked collection in the scene**, so every asset
+  renders once at its authored position *and* once per instance — a heap of
+  trams and buildings in a pile at the origin. `link_collection` drops the source
+  collection out of the hierarchy afterwards; the instances keep working.
+- **An inward-facing solid inverts every boolean after it.** `recalc_face_normals`
+  only makes normals *consistent*; on a lofted tube with n-gon caps it can settle
+  on the inward solution, and then a DIFFERENCE eats the model instead of the
+  cutter. `recalc_normals` checks the signed volume and flips.
+- **A window cutter in a solid body only buries a void inside it.** Hollow first,
+  then cut. The vehicle builds log `closed=` at every stage so this is visible.
+- **Chamfering a hollow shell does not make a facet**, it slices the shell open
+  and the cavity shows through the gap. The tram's cab chamfer is built into the
+  loft instead.
+- **Generated texture coordinates are per-object.** Two neighbouring surfaces
+  sharing a material get unrelated patterns. Anything that has to be continuous
+  across objects — the wet road — uses world-space Position.
+- **Principled sheen is a white rim lobe.** On the big smooth spheres a
+  procedural canopy is made of it covers the whole surface, and every tree
+  renders as a pale grey blob. Foliage uses no sheen.
+- **Joining takes the first part's object transform.** If that part is not at the
+  origin, the asset's local space is rotated and offset from world space. Both
+  vehicle builds apply the transform after joining.
 
 ## Axes
 

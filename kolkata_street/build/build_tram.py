@@ -181,14 +181,45 @@ def bay_layout(x0, x1, pillar, target_bay):
 
 
 # ===================================================================== body shell
-def facet_cutters(xn, coll):
-    """Two wedges that chamfer the front corners into a faceted cab bay.
+def facet_width(x, x_out, front):
+    """Half-width the cab chamfer allows at this station.
 
-    The Kolkata cab front is not a flat slab: it steps back through angled corner
-    panels, so the windscreen is a three-pane bay (centre plus two raked corners).
-    Each cutter is a big box lying on the line from the nose corner (xn, +/-0.62)
-    out to the full body width at xn - FACET_X.
+    The cab front is not a flat slab: it steps back through angled corner panels,
+    so the windscreen is a three-pane bay. In plan the chamfer is a straight line
+    from the nose corner (x_out, +/-FACET_Y) back to the full body width at
+    x_out - FACET_X. Beyond that it does not constrain anything.
     """
+    if not front:
+        return 1e9
+    t = (x - (x_out - SPEC['FACET_X'])) / SPEC['FACET_X']
+    if t <= 0.0:
+        return 1e9
+    return M.lerp(SPEC['HALF_W'], SPEC['FACET_Y'], min(1.0, t))
+
+
+def faceted_rings(section, lo, hi, front, inset=0.0):
+    """Lay a section out along the body, clipping it to the cab chamfer.
+
+    The chamfer is built into the loft rather than booleaned out of it. Cutting a
+    corner off a hollow shell does not make a facet -- it slices the shell open
+    and leaves the cavity showing through the gap. Clamping the section as it is
+    laid down gives a closed solid with the facet already in it.
+    """
+    x_out = hi if front else lo
+    xs = [lo, hi] if not front else \
+        [lo] + [hi - SPEC['FACET_X'] * (1 - t) for t in (0.0, 0.34, 0.67, 1.0)]
+    rings = []
+    for x in xs:
+        yc = facet_width(x, x_out, front)
+        yc = 1e9 if yc > 1e8 else max(0.05, yc - inset)
+        rings.append([Vector((x, max(-yc, min(yc, p.y)), p.z)) for p in section])
+    return rings
+
+
+def facet_cutters(xn, coll):
+    """Wedges on the same two chamfer planes, for the solid overlays -- the roof
+    cap, the cantrail band and the waist rail. Those are solid boxes, so cutting
+    them is safe; only the hollow shell has to have the facet built in."""
     fx, y1 = SPEC['FACET_X'], SPEC['FACET_Y']
     out = []
     for sd in (1, -1):
@@ -211,12 +242,12 @@ def build_body(which, coll):
     lo, hi = min(x_in, x_out), max(x_in, x_out)
     parts = []
 
-    # --- shell: a constant section extruded the length of the body, then hollowed
-    sec = [Vector((lo, p.y, p.z)) for p in outer_section()]
-    shell = M.extrude_profile(sec, (hi - lo, 0, 0), 'body_%s' % which, coll,
-                              MAT['body'], smooth=False)
-    cav = [Vector((lo + sp['WALL'], p.y, p.z)) for p in inner_section()]
-    cavity = M.extrude_profile(cav, (hi - lo - 2 * sp['WALL'], 0, 0), 'cavity', coll)
+    # --- shell: the section laid along the body with the cab chamfer built in,
+    # then hollowed by the same thing inset.
+    shell = M.loft(faceted_rings(outer_section(), lo, hi, front), True, True,
+                   'body_%s' % which, coll, MAT['body'], smooth=False)
+    cavity = M.loft(faceted_rings(inner_section(), lo + sp['WALL'], hi - sp['WALL'],
+                                  front, inset=sp['WALL']), True, True, 'cavity', coll)
     M.boolean(shell, cavity, 'DIFFERENCE')
 
     # --- grey roof cap, following the same ellipse as the section
@@ -233,7 +264,6 @@ def build_body(which, coll):
             M.boolean(target, cut, 'DIFFERENCE')
         return target
 
-    facet_cut(shell)
     facet_cut(roofcap)
 
     # --- doorways. Three per side across the pair, as on the SLT/articulated cars:
@@ -544,17 +574,17 @@ def build_front(coll):
     parts.append(fn)
 
     # --- destination board on brackets over the roof, reading forwards
-    bz = sp['Z_ROOF'] + 0.33
+    bz = sp['Z_ROOF'] + 0.235
     for sd in (1, -1):
-        parts.append(M.box((0.035, 0.035, 0.40), (xn - 0.72, sd * 0.42,
-                           sp['Z_ROOF'] - 0.02), name='destbrk%d' % sd, coll=coll,
+        parts.append(M.box((0.030, 0.030, 0.30), (xn - 0.62, sd * 0.36,
+                           sp['Z_ROOF'] - 0.01), name='destbrk%d' % sd, coll=coll,
                            mat=MAT['steel']))
-    parts.append(M.box((0.055, 1.62, 0.30), (xn - 0.72, 0, bz), name='destboard',
-                       coll=coll, mat=MAT['black'], bevel=0.012))
-    parts.append(M.box((0.014, 1.54, 0.24), (xn - 0.69, 0, bz), name='destface',
+    parts.append(M.box((0.050, 1.26, 0.235), (xn - 0.62, 0, bz), name='destboard',
+                       coll=coll, mat=MAT['black'], bevel=0.010))
+    parts.append(M.box((0.013, 1.19, 0.185), (xn - 0.595, 0, bz), name='destface',
                        coll=coll, mat=MAT['dest']))
-    t = M.text_solid(sp['DEST'], 0.135, 0.004, 'desttext', coll, MAT['black'])
-    M.place(t, (xn - 0.681, 0, bz - 0.008), (math.pi / 2, 0, math.pi / 2))
+    t = M.text_solid(sp['DEST'], 0.105, 0.004, 'desttext', coll, MAT['black'])
+    M.place(t, (xn - 0.587, 0, bz - 0.006), (math.pi / 2, 0, math.pi / 2))
     parts.append(t)
 
     # --- marker lamps at the front roof corners
@@ -769,9 +799,9 @@ def preview(body):
     sc.camera = cam
 
     shots = [
-        ('elev_side',  'ORTHO', (ctr.x, -40, ctr.z), (ctr.x, 0, ctr.z), span),
-        ('elev_front', 'ORTHO', (40, 0, ctr.z), (0, 0, ctr.z), 6.0),
-        ('elev_rear',  'ORTHO', (-40, 0, ctr.z), (0, 0, ctr.z), 6.0),
+        ('elev_side',  'ORTHO', (ctr.x, -40, 1.85), (ctr.x, 0, 1.85), span),
+        ('elev_front', 'ORTHO', (40, 0, 1.85), (0, 0, 1.85), 4.6),
+        ('elev_rear',  'ORTHO', (-40, 0, 1.85), (0, 0, 1.85), 4.6),
         ('plan',       'ORTHO', (ctr.x, 0, 40), (ctr.x, 0, 0), span),
         ('3q',         'PERSP', (19.0, -15.0, 5.2), (-0.5, 0, 1.6), 55),
         ('3q_rear',    'PERSP', (-17.0, 12.0, 4.4), (1.0, 0, 1.6), 55),

@@ -114,12 +114,25 @@ def _ramp(nt, stops, loc=(-700, 0), interp='LINEAR'):
 
 
 def _mapping(nt, scale=(1, 1, 1), loc=(-1100, 0), coord='Object'):
-    tc = nt.nodes.new('ShaderNodeTexCoord')
-    tc.location = (loc[0] - 200, loc[1])
+    """A scaled texture coordinate.
+
+    coord='World' uses the Geometry node's Position, which is world space in
+    metres. That is the only coordinate that is continuous ACROSS objects:
+    'Generated' is normalised to each object's own bounding box, so two
+    neighbouring surfaces with the same material get completely different
+    patterns, and 'Object' shifts with each object's origin.
+    """
     mp = nt.nodes.new('ShaderNodeMapping')
     mp.location = loc
     mp.inputs['Scale'].default_value = scale
-    nt.links.new(tc.outputs[coord], mp.inputs['Vector'])
+    if coord == 'World':
+        tc = nt.nodes.new('ShaderNodeNewGeometry')
+        tc.location = (loc[0] - 200, loc[1])
+        nt.links.new(tc.outputs['Position'], mp.inputs['Vector'])
+    else:
+        tc = nt.nodes.new('ShaderNodeTexCoord')
+        tc.location = (loc[0] - 200, loc[1])
+        nt.links.new(tc.outputs[coord], mp.inputs['Vector'])
     return tc, mp
 
 
@@ -315,7 +328,7 @@ def brick(name='brick', color=(0.33, 0.15, 0.10), mortar=(0.62, 0.60, 0.56),
 
 
 def wet_asphalt(name='asphalt_wet', wetness=0.75, puddle_scale=0.55,
-                tint=(0.040, 0.040, 0.043)):
+                tint=(0.040, 0.040, 0.043), blocks=False, block_scale=5.5):
     """The single most important material in the scene.
 
     Dry asphalt is near-black and rough. Where a puddle sits, roughness collapses
@@ -323,27 +336,33 @@ def wet_asphalt(name='asphalt_wet', wetness=0.75, puddle_scale=0.55,
     paintings read as monsoon Kolkata. The puddle mask is one big noise, hard
     ramped, so puddles are irregular connected pools rather than dots.
     `wetness` 0 = dry road, 1 = sheet water everywhere.
+
+    `blocks` adds a stone-sett joint pattern as bump only, for the band the tram
+    rails are laid in. It has to be the same material as the road, not a separate
+    glossier one: at grazing incidence Fresnel reflectance goes to 1 whatever the
+    base colour, so a shinier band turns into a sheet of white sky and reads as a
+    pavement running down the middle of the carriageway. Same wetness, same
+    puddles, joints in the bump -- and then the rails are the only bright lines,
+    which is what the reference photographs show.
     """
     m, nt, bsdf = _new(name)
     if nt is None:
         return m
-    tc, mp = _mapping(nt, (puddle_scale, puddle_scale, puddle_scale), (-1400, 300),
-                      'Generated')
-    pud = _noise(nt, 1.0, 4.0, 0.52, 0.9, (-1200, 300))
+    tc, mp = _mapping(nt, (1.0, 1.0, 1.0), (-1400, 300), 'World')
+    pud = _noise(nt, puddle_scale, 4.0, 0.52, 0.9, (-1200, 300))
     nt.links.new(mp.outputs['Vector'], pud.inputs['Vector'])
     thresh = 0.56 - 0.20 * wetness
     mask = _ramp(nt, [(thresh, (0, 0, 0)), (thresh + 0.10, (1, 1, 1))], (-1000, 300))
     nt.links.new(pud.outputs['Fac'], mask.inputs['Fac'])
 
-    grain = _noise(nt, 90.0, 8.0, 0.6, 0.0, (-1200, -100))
+    grain = _noise(nt, 11.0, 8.0, 0.6, 0.0, (-1200, -100))
+    nt.links.new(mp.outputs['Vector'], grain.inputs['Vector'])
     gramp = _ramp(nt, [(0.38, (0, 0, 0)), (0.66, (1, 1, 1))], (-1000, -100))
     nt.links.new(grain.outputs['Fac'], gramp.inputs['Fac'])
     dry_col = tuple(c * 2.3 for c in tint)
     dryn, dry_out = _mix_rgb(nt, gramp, 'Color', tint, dry_col, (-800, -100))
 
     wet_col = tuple(c * 0.52 for c in tint)
-    colmix = nt.nodes.new('ShaderNodeMix' if 'ShaderNodeMix' in dir(bpy.types)
-                          else 'ShaderNodeMixRGB')
     colmix, col_out = _mix_rgb(nt, mask, 'Color', (0, 0, 0), wet_col, (-600, 100))
     nt.links.new(dry_out, colmix.inputs[6] if colmix.bl_idname == 'ShaderNodeMix'
                  else colmix.inputs['Color1'])
@@ -361,17 +380,35 @@ def wet_asphalt(name='asphalt_wet', wetness=0.75, puddle_scale=0.55,
     nt.links.new(r_out, _socket(bsdf, 'roughness'))
 
     # coarse aggregate bump on the dry parts only, plus faint ripples on the wet
-    ripple = _noise(nt, 160.0, 3.0, 0.5, 0.0, (-1200, -500))
+    ripple = _noise(nt, 26.0, 3.0, 0.5, 0.0, (-1200, -500))
+    nt.links.new(mp.outputs['Vector'], ripple.inputs['Vector'])
     bmix, b_out = _mix_float(nt, mask, 'Color', 0.0, 0.0, (-600, -560))
     nt.links.new(gramp.outputs['Color'], bmix.inputs[2] if bmix.bl_idname == 'ShaderNodeMix'
                  else bmix.inputs['Color1'])
     nt.links.new(ripple.outputs['Fac'], bmix.inputs[3] if bmix.bl_idname == 'ShaderNodeMix'
                  else bmix.inputs['Color2'])
+    height_out = b_out
+    if blocks:
+        tc2, mp2 = _mapping(nt, (block_scale,) * 3, (-1400, -760), 'World')
+        br = nt.nodes.new('ShaderNodeTexBrick')
+        br.location = (-1200, -760)
+        br.inputs['Scale'].default_value = 1.0
+        br.inputs['Mortar Size'].default_value = 0.030
+        br.inputs['Brick Width'].default_value = 0.55
+        br.inputs['Row Height'].default_value = 0.42
+        nt.links.new(mp2.outputs['Vector'], br.inputs['Vector'])
+        jmix, jout = _mix_float(nt, None, None, 0.0, 0.0, (-900, -760))
+        is_mix = jmix.bl_idname == 'ShaderNodeMix'
+        nt.links.new(b_out, jmix.inputs[2] if is_mix else jmix.inputs['Color1'])
+        nt.links.new(br.outputs['Fac'],
+                     jmix.inputs[3] if is_mix else jmix.inputs['Color2'])
+        (jmix.inputs[0] if is_mix else jmix.inputs['Fac']).default_value = 0.70
+        height_out = jout
     bump = nt.nodes.new('ShaderNodeBump')
     bump.location = (-300, -500)
-    bump.inputs['Strength'].default_value = 0.30
-    bump.inputs['Distance'].default_value = 0.006
-    nt.links.new(b_out, bump.inputs['Height'])
+    bump.inputs['Strength'].default_value = 0.55 if blocks else 0.30
+    bump.inputs['Distance'].default_value = 0.010 if blocks else 0.006
+    nt.links.new(height_out, bump.inputs['Height'])
     nt.links.new(bump.outputs['Normal'], _socket(bsdf, 'normal'))
     _set(bsdf, 'specular', 0.5)
     return m
@@ -383,25 +420,46 @@ def concrete(name='concrete', color=(0.52, 0.51, 0.49), rough=0.88):
     return m
 
 
-def granite_setts(name='setts', color=(0.26, 0.25, 0.24)):
-    """The stone block band the tram rails are laid in."""
+def granite_setts(name='setts', color=(0.075, 0.072, 0.068), wet=0.6):
+    """The stone block band the tram rails are laid in.
+
+    The trap here is grazing incidence. A smooth dielectric at a shallow angle is
+    almost totally reflective whatever its base colour, so a glossy setts band
+    seen from 1.6 m up turns into a sheet of white sky and reads as a pavement
+    running down the middle of the road. Real wet setts break that reflection up,
+    so the roughness is kept high, the specular level is pulled down, and a fine
+    noise bump is mixed in on top of the block pattern.
+    """
     m, nt, bsdf = _new(name)
     if nt is None:
         return m
     tc, mp = _mapping(nt, (5.5, 5.5, 5.5), (-1100, 300), 'Object')
-    b = nt.nodes.new('ShaderNodeTexBrick')
-    b.location = (-900, 300)
-    b.inputs['Color1'].default_value = (*color, 1)
-    b.inputs['Color2'].default_value = (*[c * 1.35 for c in color], 1)
-    b.inputs['Mortar'].default_value = (*[c * 0.5 for c in color], 1)
-    b.inputs['Scale'].default_value = 1.0
-    b.inputs['Mortar Size'].default_value = 0.035
-    b.inputs['Brick Width'].default_value = 0.55
-    b.inputs['Row Height'].default_value = 0.42
-    nt.links.new(mp.outputs['Vector'], b.inputs['Vector'])
-    nt.links.new(b.outputs['Color'], _socket(bsdf, 'base'))
-    _set(bsdf, 'roughness', 0.55)
-    _bump(nt, bsdf, b, 'Fac', 0.6, 0.012)
+    br = nt.nodes.new('ShaderNodeTexBrick')
+    br.location = (-900, 300)
+    br.inputs['Color1'].default_value = (*color, 1)
+    br.inputs['Color2'].default_value = (*[c * 1.6 for c in color], 1)
+    br.inputs['Mortar'].default_value = (*[c * 0.45 for c in color], 1)
+    br.inputs['Scale'].default_value = 1.0
+    br.inputs['Mortar Size'].default_value = 0.035
+    br.inputs['Brick Width'].default_value = 0.55
+    br.inputs['Row Height'].default_value = 0.42
+    nt.links.new(mp.outputs['Vector'], br.inputs['Vector'])
+    nt.links.new(br.outputs['Color'], _socket(bsdf, 'base'))
+    _set(bsdf, 'roughness', 0.78 - 0.18 * wet)
+    _set(bsdf, 'specular', 0.30)
+    grain = _noise(nt, 120.0, 7.0, 0.6, 0.0, (-900, -120))
+    mixb, mixb_out = _mix_float(nt, None, None, 0.0, 0.0, (-640, -120))
+    is_mix = mixb.bl_idname == 'ShaderNodeMix'
+    nt.links.new(br.outputs['Fac'], mixb.inputs[2] if is_mix else mixb.inputs['Color1'])
+    nt.links.new(grain.outputs['Fac'],
+                 mixb.inputs[3] if is_mix else mixb.inputs['Color2'])
+    (mixb.inputs[0] if is_mix else mixb.inputs['Fac']).default_value = 0.45
+    bump = nt.nodes.new('ShaderNodeBump')
+    bump.location = (-300, -120)
+    bump.inputs['Strength'].default_value = 0.65
+    bump.inputs['Distance'].default_value = 0.010
+    nt.links.new(mixb_out, bump.inputs['Height'])
+    nt.links.new(bump.outputs['Normal'], _socket(bsdf, 'normal'))
     return m
 
 
@@ -427,7 +485,7 @@ def corrugated_tin(name='tin', color=(0.38, 0.36, 0.33), rusty=0.5):
     _set(bsdf, 'base', color)
     _set(bsdf, 'roughness', 0.62)
     _set(bsdf, 'metallic', 0.75)
-    tc, mp = _mapping(nt, (60.0, 1.0, 1.0), (-1100, 0), 'Object')
+    tc, mp = _mapping(nt, (13.0, 1.0, 1.0), (-1100, 0), 'Object')
     w = nt.nodes.new('ShaderNodeTexWave')
     w.location = (-900, 0)
     w.wave_type = 'BANDS'
@@ -447,16 +505,22 @@ def corrugated_tin(name='tin', color=(0.38, 0.36, 0.33), rusty=0.5):
     return m
 
 
-def foliage(name='foliage', color=(0.055, 0.105, 0.030)):
-    """Leaf material with a bit of translucency so canopies are not black."""
+def foliage(name='foliage', color=(0.030, 0.062, 0.016)):
+    """Leaf material.
+
+    Deliberately NO sheen. Principled's sheen lobe is a bright white rim; on the
+    big smooth spheres a procedural canopy is made of, it covers the whole
+    surface and the tree renders as a pale grey blob instead of foliage. The
+    depth comes from mottling the base colour hard instead.
+    """
     m, nt, bsdf = _new(name)
     if nt is None:
         return m
     _set(bsdf, 'base', color)
-    _set(bsdf, 'roughness', 0.62)
-    _set(bsdf, 'sheen', 0.3)
-    _set(bsdf, 'transmission', 0.0)
-    mottle(m, 18.0, 0.18, 8.0, 0.55)
+    _set(bsdf, 'roughness', 0.78)
+    _set(bsdf, 'sheen', 0.0)
+    _set(bsdf, 'specular', 0.25)
+    mottle(m, 9.0, 0.26, 10.0, 0.38, bump=0.5)
     return m
 
 

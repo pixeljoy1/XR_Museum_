@@ -35,14 +35,16 @@ rnd = random.Random(2026)
 
 # ===================================================================== layout
 ST = dict(
-    X0=-90.0, X1=150.0,            # the street runs this far along X
+    X0=-90.0, X1=150.0,            # the terrace runs this far along X
+    X_END=158.0,                   # where the carriageway stops, at the cross street
+    MOSQUE_X=166.0,
     ROAD_HW=7.0,                   # kerb to centreline
     WALK_W=2.4, KERB_H=0.155,
     CAMBER=0.075,
     TRACK_Y=1.90,                  # centre of each track, +/- from the centreline
     GAUGE=1.435,
-    RAIL_W=0.070, RAIL_H=0.150,
-    SETTS_W=2.60,                  # granite band the track is laid in
+    RAIL_W=0.072, RAIL_H=0.160,
+    SETTS_W=2.25,                  # granite band the track is laid in
     POLE_SPACING=23.0, POLE_Y=7.35,
     WIRE_Z=5.80,                   # trolley wire height above the rail head
     BUILD_Y=9.40,
@@ -50,16 +52,22 @@ ST = dict(
 )
 BUILDINGS = ['KIT_BLDG_A', 'KIT_BLDG_B', 'KIT_BLDG_C', 'KIT_BLDG_D',
              'KIT_BLDG_E', 'KIT_BLDG_F']
-FIGURES = ['KIT_FIGURE_%d' % i for i in range(6)]
+FIGURES = ['KIT_FIGURE_%d' % i for i in range(8)]
 LINK = not S.has_flag('--append')
 
 MAT = {}
 
 
 def materials():
-    MAT['asphalt'] = T.wet_asphalt('st_asphalt', wetness=ST['WET'], puddle_scale=0.42)
-    MAT['setts'] = T.granite_setts('st_setts')
-    MAT['rail'] = T.steel('st_rail', rough=0.18, tint=(0.52, 0.51, 0.48))
+    MAT['asphalt'] = T.wet_asphalt('st_asphalt', wetness=ST['WET'], puddle_scale=0.16)
+    # the track band is the SAME wet material as the road, with the sett joints
+    # as bump only -- see wet_asphalt's docstring for why a separate, glossier
+    # stone material turns the track into a white stripe down the street
+    MAT['setts'] = T.wet_asphalt('st_setts', wetness=ST['WET'] * 0.9,
+                                 puddle_scale=0.16,
+                                 tint=(0.052, 0.050, 0.047), blocks=True,
+                                 block_scale=2.2)
+    MAT['rail'] = T.steel('st_rail', rough=0.14, tint=(0.62, 0.61, 0.57))
     MAT['kerb'] = T.base('st_kerb', T.srgb('#6e6a62'), 0.80)
     MAT['walk'] = T.concrete('st_walk', T.srgb('#5f5b54'), 0.86)
     MAT['iron'] = T.base('st_iron', T.srgb('#1d1d1f'), 0.62, metal=0.6)
@@ -87,7 +95,7 @@ def build_road(coll):
     """The carriageway as a grid, so the camber, the worn hollows along the rails
     and the dish of standing water at the kerb are real geometry and the puddles
     in the material have somewhere to sit."""
-    x0, x1, hw = ST['X0'] - 20, ST['X1'] + 20, ST['ROAD_HW']
+    x0, x1, hw = ST['X0'] - 20, ST['X_END'], ST['ROAD_HW']
     nx, ny = int((x1 - x0) / 1.4), 64
     verts, faces = [], []
     for i in range(nx + 1):
@@ -112,6 +120,10 @@ def build_road(coll):
             faces.append([a, b, b + 1, a + 1])
     road = M.new_mesh('WALK_road', verts, faces, coll, MAT['asphalt'], smooth=True,
                       auto_angle=20.0)
+    # the cross street the terrace runs into, so the view down the road lands on
+    # ground rather than on the sky
+    M.plane((150, 150), (ST['X_END'] + 60, 0, 0.02), name='far_ground', coll=coll,
+            mat=MAT['asphalt'])
     return road
 
 
@@ -122,7 +134,7 @@ def build_track(coll):
     converted from 1900. It is not broad gauge, whatever the Indian main line does.
     """
     parts = []
-    x0, x1 = ST['X0'] - 20, ST['X1'] + 20
+    x0, x1 = ST['X0'] - 20, ST['X_END']
     for sy in (1, -1):
         cy = sy * ST['TRACK_Y']
         zc = z_road(cy)
@@ -132,18 +144,21 @@ def build_track(coll):
         for sg in (1, -1):
             ry = cy + sg * ST['GAUGE'] / 2
             # head, flush with the setts, and the groove beside it
+            # the head stands ~14 mm proud of the setts, which is what makes the
+            # two bright steel lines read down a wet street
             parts.append(M.box((x1 - x0, ST['RAIL_W'], ST['RAIL_H']),
-                               ((x0 + x1) / 2, ry, zc - ST['RAIL_H'] / 2 + 0.006),
+                               ((x0 + x1) / 2, ry, zc - ST['RAIL_H'] / 2 + 0.014),
                                name='rail', coll=coll, mat=MAT['rail']))
             parts.append(M.box((x1 - x0, 0.034, 0.05),
                                ((x0 + x1) / 2, ry + sg * 0.052, zc - 0.022),
                                name='groove', coll=coll, mat=MAT['iron']))
-    return M.join(parts, 'SOLID_track', coll)
+    return M.apply_transform(M.join(parts, 'SOLID_track', coll),
+                             loc=True, rot=True, scale=True)
 
 
 def build_kerbs_and_walks(coll):
     parts = []
-    x0, x1 = ST['X0'] - 20, ST['X1'] + 20
+    x0, x1 = ST['X0'] - 20, ST['X_END']
     hw, ww, kh = ST['ROAD_HW'], ST['WALK_W'], ST['KERB_H']
     for sy in (1, -1):
         parts.append(M.box((x1 - x0, 0.30, 0.42), ((x0 + x1) / 2, sy * (hw + 0.15),
@@ -151,12 +166,16 @@ def build_kerbs_and_walks(coll):
         parts.append(M.box((x1 - x0, ww, 0.14), ((x0 + x1) / 2,
                            sy * (hw + 0.30 + ww / 2), kh - 0.07), name='walk',
                            coll=coll, mat=MAT['walk']))
-        # the strip of dirt between the footpath and the building line
-        parts.append(M.box((x1 - x0, ST['BUILD_Y'] - (hw + 0.30 + ww), 0.12),
-                           ((x0 + x1) / 2,
-                            sy * (hw + 0.30 + ww + (ST['BUILD_Y'] - hw - 0.30 - ww) / 2),
-                            kh - 0.06), name='verge', coll=coll, mat=MAT['walk']))
-    return M.join(parts, 'WALK_footpath', coll)
+        # the strip between the footpath and the building line. BUILD_Y can be
+        # inside the footpath, which would give the box a negative width and turn
+        # it inside out, so it is only built when there is actually a gap.
+        gap = ST['BUILD_Y'] - (hw + 0.30 + ww)
+        if gap > 0.05:
+            parts.append(M.box((x1 - x0, gap, 0.12),
+                               ((x0 + x1) / 2, sy * (hw + 0.30 + ww + gap / 2),
+                                kh - 0.06), name='verge', coll=coll, mat=MAT['walk']))
+    return M.apply_transform(M.join(parts, 'WALK_footpath', coll),
+                             loc=True, rot=True, scale=True)
 
 
 # ===================================================================== overhead
@@ -260,23 +279,25 @@ def place_traffic(kit, coll):
     +X-bound stream is on the +Y side and the -X-bound stream on the -Y side."""
     zr = lambda y: z_road(y)
 
-    # the two trams, on their own tracks
-    S.instance(kit['TRAM_CTC'], 'TRAM_near', (-2.0, ST['TRACK_Y'], zr(ST['TRACK_Y'])),
-               (0, 0, 0), into=coll)
-    S.instance(kit['TRAM_CTC'], 'TRAM_far', (62.0, -ST['TRACK_Y'], zr(-ST['TRACK_Y'])),
+    # The hero tram is on the -Y track heading -X, so it comes towards a camera
+    # standing down the street at negative X. The second one goes the other way
+    # on the +Y track.
+    S.instance(kit['TRAM_CTC'], 'TRAM_near', (7.0, -ST['TRACK_Y'], zr(-ST['TRACK_Y'])),
                (0, 0, math.pi), into=coll)
+    S.instance(kit['TRAM_CTC'], 'TRAM_far', (54.0, ST['TRACK_Y'], zr(ST['TRACK_Y'])),
+               (0, 0, 0), into=coll)
 
-    # taxis: x, y, heading, so they can be moved one line at a time
-    taxis = [(-16.5, 5.05, 0.0), (10.5, 4.60, 0.0), (33.0, 5.30, 0.0),
-             (58.0, 4.80, 0.0), (-9.0, -4.70, math.pi), (19.0, -5.20, math.pi),
-             (44.0, -4.65, math.pi), (80.0, -5.00, math.pi)]
+    # taxis: x, y, heading -- one line each, so they are easy to move
+    taxis = [(-14.0, -5.00, math.pi), (5.5, -5.25, math.pi), (27.0, -4.80, math.pi),
+             (59.0, -5.10, math.pi), (-22.0, 4.85, 0.0), (12.0, 5.20, 0.0),
+             (38.0, 4.70, 0.0), (76.0, 5.05, 0.0)]
     for i, (x, y, h) in enumerate(taxis):
         S.instance(kit['AMBASSADOR_TAXI'], 'taxi_%d' % i, (x, y, zr(y)),
                    (0, 0, h + rnd.uniform(-0.03, 0.03)), into=coll)
-    for i, (x, y, h) in enumerate([(-24.0, 6.10, 0.0), (26.0, -6.20, math.pi)]):
+    for i, (x, y, h) in enumerate([(-30.0, -6.20, math.pi), (22.0, 6.10, 0.0)]):
         S.instance(kit['KIT_AUTO'], 'auto_%d' % i, (x, y, zr(y)), (0, 0, h), into=coll)
-    S.instance(kit['KIT_HANDCART'], 'handcart', (-30.0, 6.40, zr(6.4)),
-               (0, 0, 0.12), into=coll)
+    S.instance(kit['KIT_HANDCART'], 'handcart', (-36.0, -6.35, zr(-6.35)),
+               (0, 0, math.pi + 0.12), into=coll)
 
 
 def place_street_life(kit, coll):
@@ -302,10 +323,12 @@ def place_street_life(kit, coll):
         spots.append((rnd.uniform(ST['X0'] + 10, ST['X1'] - 20),
                       sy * (walk_y + rnd.uniform(-0.8, 0.8)), ST['KERB_H'],
                       rnd.uniform(0, 6.28)))
-    # a few crossing the carriageway, which is what gives the street its scale
-    for i in range(7):
+    # a few crossing the carriageway, which is what gives the street its scale.
+    # Kept away from the near end, because a stylised figure does not stand up to
+    # being eight metres from a 50 mm lens.
+    for i in range(5):
         y = rnd.uniform(-6.4, 6.4)
-        spots.append((rnd.uniform(-34, 40), y, z_road(y), rnd.uniform(0, 6.28)))
+        spots.append((rnd.uniform(18, 72), y, z_road(y), rnd.uniform(0, 6.28)))
     for i, (x, y, z, h) in enumerate(spots):
         S.instance(kit[rnd.choice(FIGURES)], 'figure_%d' % i, (x, y, z), (0, 0, h),
                    into=coll)
@@ -313,9 +336,18 @@ def place_street_life(kit, coll):
 
 # ===================================================================== weather
 def build_sky(fog=True):
-    """Overcast monsoon light: a hazy sky, a soft low sun, and a thin uniform fog
-    so distance reads as distance. This is the look of the reference paintings --
-    almost monochrome, with the tram the only saturated thing in the frame."""
+    """Overcast monsoon light, and depth haze done in the compositor.
+
+    The haze is deliberately NOT a world volume. A world volume in Cycles is
+    unbounded, so light from a sun -- which is infinitely far away -- is
+    extinguished over an infinite path and the whole scene renders black. The mist
+    pass gives the same aerial perspective for nothing, with no volume noise, and
+    it can be dialled after the render instead of before it.
+
+    This is the look of the reference paintings: almost monochrome, the distance
+    going grey, and the tram the only saturated thing in the frame.
+    """
+    sc = bpy.context.scene
     w = bpy.data.worlds.new('MonsoonSky')
     w.use_nodes = True
     nt = w.node_tree
@@ -324,68 +356,112 @@ def build_sky(fog=True):
     sky.location = (-300, 0)
     try:
         sky.sky_type = 'NISHITA'
-        sky.sun_elevation = math.radians(27)
+        sky.sun_elevation = math.radians(34)
         sky.sun_rotation = math.radians(118)
-        sky.sun_intensity = 0.25          # heavily diffused: it is overcast
+        sky.sun_intensity = 0.35          # heavily diffused: it is overcast
         sky.altitude = 10
-        sky.air_density = 1.9
-        sky.dust_density = 5.0
-        sky.ozone_density = 1.4
+        sky.air_density = 1.35
+        sky.dust_density = 2.6
+        sky.ozone_density = 1.2
     except Exception:
         pass
     nt.links.new(sky.outputs[0], bg.inputs[0])
-    bg.inputs[1].default_value = 0.85
-    if fog:
-        vs = nt.nodes.new('ShaderNodeVolumeScatter')
-        vs.location = (-200, -260)
-        vs.inputs['Color'].default_value = (0.74, 0.77, 0.82, 1.0)
-        vs.inputs['Density'].default_value = 0.0016
-        vs.inputs['Anisotropy'].default_value = 0.35
-        out = nt.nodes['World Output']
-        nt.links.new(vs.outputs[0], out.inputs['Volume'])
-    bpy.context.scene.world = w
+    bg.inputs[1].default_value = 1.45
+    sc.world = w
 
     sun = bpy.data.objects.new('SUN_key', bpy.data.lights.new('SUN_key', 'SUN'))
-    sun.data.energy = 2.1
-    sun.data.angle = math.radians(11.0)   # a big soft source: cloud, not clear sky
-    sun.data.color = (1.0, 0.95, 0.88)
-    sun.rotation_euler = (math.radians(63), 0, math.radians(118))
-    bpy.context.scene.collection.objects.link(sun)
+    sun.data.energy = 3.4
+    sun.data.angle = math.radians(14.0)   # a big soft source: cloud, not clear sky
+    sun.data.color = (1.0, 0.96, 0.90)
+    sun.rotation_euler = (math.radians(56), 0, math.radians(118))
+    sc.collection.objects.link(sun)
+
+    if fog:
+        add_mist_haze(sc, start=30.0, depth=420.0,
+                      colour=(0.70, 0.73, 0.79), strength=0.72)
     return w, sun
+
+
+def add_mist_haze(sc, start=18.0, depth=190.0, colour=(0.76, 0.79, 0.84),
+                  strength=0.9):
+    """Mix a flat haze colour over the render by the mist pass.
+
+    start/depth are metres: nothing nearer than `start` is touched, and by
+    `start + depth` the haze is at full `strength`. Tune them in the compositor
+    without re-rendering the beauty pass.
+    """
+    vl = sc.view_layers[0]
+    vl.use_pass_mist = True
+    sc.world.mist_settings.use_mist = True
+    sc.world.mist_settings.start = start
+    sc.world.mist_settings.depth = depth
+    sc.world.mist_settings.falloff = 'LINEAR'
+    sc.world.mist_settings.intensity = 0.0
+
+    sc.use_nodes = True
+    nt = sc.node_tree
+    for n in list(nt.nodes):
+        nt.nodes.remove(n)
+    rl = nt.nodes.new('CompositorNodeRLayers')
+    rl.location = (-500, 0)
+    haze = nt.nodes.new('CompositorNodeRGB')
+    haze.location = (-500, -260)
+    haze.outputs[0].default_value = (*colour, 1.0)
+    mul = nt.nodes.new('CompositorNodeMath')
+    mul.operation = 'MULTIPLY'
+    mul.location = (-280, -120)
+    mul.inputs[1].default_value = strength
+    mix = nt.nodes.new('CompositorNodeMixRGB')
+    mix.blend_type = 'MIX'
+    mix.location = (-60, 0)
+    comp = nt.nodes.new('CompositorNodeComposite')
+    comp.location = (200, 0)
+    vw = nt.nodes.new('CompositorNodeViewer')
+    vw.location = (200, -200)
+    nt.links.new(rl.outputs['Image'], mix.inputs[1])
+    nt.links.new(haze.outputs[0], mix.inputs[2])
+    if 'Mist' in rl.outputs:
+        nt.links.new(rl.outputs['Mist'], mul.inputs[0])
+        nt.links.new(mul.outputs[0], mix.inputs[0])
+    else:
+        mix.inputs[0].default_value = 0.0
+    nt.links.new(mix.outputs[0], comp.inputs['Image'])
+    nt.links.new(mix.outputs[0], vw.inputs['Image'])
+    return nt
 
 
 # ===================================================================== cameras
 # Each entry is a real shot. Move them, add to them: that is the whole point of
 # the file. `aim` is a point in the street, not a rotation.
 SHOTS = [
-    dict(name='SHOT_01_tram_nose', loc=(-27.0, 3.30, 1.35), aim=(-4.0, 2.10, 2.05),
+    dict(name='SHOT_01_tram_nose', loc=(-25.0, -4.60, 1.30), aim=(-1.0, -2.20, 1.95),
          lens=85, fstop=2.8,
-         note='Low and long, tram filling the frame, like the first watercolour.'),
-    dict(name='SHOT_02_wet_wide', loc=(-19.0, -4.20, 1.62), aim=(16.0, 0.60, 2.40),
+         note='Low and long, the tram coming at you, like the first watercolour.'),
+    dict(name='SHOT_02_wet_wide', loc=(-16.0, 3.20, 1.60), aim=(16.0, -1.00, 2.30),
          lens=24, fstop=5.6,
          note='Wide, standing in the road, the whole wet street and the reflections.'),
-    dict(name='SHOT_03_telephoto_vista', loc=(-46.0, 1.40, 1.55),
-         aim=(90.0, 0.20, 3.20), lens=200, fstop=4.0,
+    dict(name='SHOT_03_telephoto_vista', loc=(-44.0, 0.60, 1.60),
+         aim=(120.0, -0.10, 9.00), lens=200, fstop=4.0,
          note='Compressed down the street, traffic stacked, the dome closing it.'),
-    dict(name='SHOT_04_puddle', loc=(-12.0, 4.90, 0.22), aim=(14.0, 2.60, 2.60),
+    dict(name='SHOT_04_puddle', loc=(-11.0, -4.40, 0.22), aim=(13.0, -2.00, 2.40),
          lens=35, fstop=4.0,
          note='A hand-span above the road: the reflection is the subject.'),
-    dict(name='SHOT_05_balcony', loc=(-21.0, 11.60, 8.40), aim=(8.0, 0.0, 1.20),
+    dict(name='SHOT_05_balcony', loc=(-18.0, -8.90, 8.20), aim=(10.0, 0.00, 1.00),
          lens=50, fstop=6.3,
          note='From a second-floor balcony, looking down into the traffic.'),
-    dict(name='SHOT_06_pavement', loc=(-8.0, 8.30, 1.62), aim=(26.0, 2.00, 2.20),
+    dict(name='SHOT_06_pavement', loc=(-6.0, -8.40, 1.62), aim=(26.0, -2.50, 2.20),
          lens=35, fstop=3.5,
          note='Pedestrian eye level on the footpath, under the awnings.'),
-    dict(name='SHOT_07_under_wires', loc=(4.0, 0.0, 4.60), aim=(70.0, 0.0, 5.60),
+    dict(name='SHOT_07_under_wires', loc=(-10.0, 0.00, 4.90), aim=(80.0, 0.00, 5.70),
          lens=28, fstop=8.0,
          note='Up among the trolley wire and the cable, looking down the line.'),
-    dict(name='SHOT_08_taxi_three_quarter', loc=(-20.5, 9.10, 1.15),
-         aim=(-9.0, 4.70, 1.00), lens=50, fstop=2.2,
+    dict(name='SHOT_08_taxi_three_quarter', loc=(-24.0, -7.90, 1.10),
+         aim=(-14.5, -5.00, 0.95), lens=50, fstop=2.2,
          note='Taxi close in three-quarter, the tram soft behind it.'),
-    dict(name='SHOT_09_crossing', loc=(14.0, -7.80, 1.70), aim=(-12.0, 1.80, 2.00),
+    dict(name='SHOT_09_crossing', loc=(10.0, 7.90, 1.70), aim=(-16.0, -2.00, 2.00),
          lens=50, fstop=4.0,
          note='Looking back up the street from the far kerb, across both tracks.'),
-    dict(name='SHOT_10_tram_rear', loc=(26.0, 5.40, 2.90), aim=(-6.0, 1.90, 2.10),
+    dict(name='SHOT_10_tram_rear', loc=(31.0, -5.60, 3.00), aim=(5.0, -1.90, 2.00),
          lens=70, fstop=4.0,
          note='Behind and above the near tram, the street opening out past it.'),
 ]
@@ -395,9 +471,9 @@ def build_cameras(coll):
     cams = [C.camera(s['name'], s['loc'], s['aim'], s['lens'], s['fstop'],
                      coll=coll, note=s['note']) for s in SHOTS]
     # a dolly that runs up the middle of the street, aimed at the near tram
-    C.dolly_rig('CAM_DOLLY', [(-60, 0.4, 2.2), (-30, 2.2, 1.9), (0, 3.4, 1.7),
-                              (30, 1.2, 2.4), (70, -1.0, 3.0), (110, 0.2, 3.6)],
-                (-2.0, 1.9, 2.0), lens=40, frames=250, fstop=5.6, coll=coll)
+    C.dolly_rig('CAM_DOLLY', [(-60, 0.4, 2.2), (-34, 3.0, 1.8), (-8, 4.2, 1.6),
+                              (22, 2.0, 2.4), (62, -0.6, 3.0), (108, 0.2, 3.6)],
+                (7.0, -1.9, 2.0), lens=40, frames=250, fstop=5.6, coll=coll)
     bpy.context.scene.camera = cams[0]
     return cams
 
@@ -423,8 +499,12 @@ def main():
 
     S.log('city')
     place_buildings(kit, city)
-    S.instance(kit['KIT_MOSQUE'], 'mosque', (ST['X1'] + 26, 0.0, 0.0),
+    S.instance(kit['KIT_MOSQUE'], 'mosque', (ST['MOSQUE_X'], 0.0, 0.0),
                (0, 0, -math.pi / 2), into=city)
+    # the cross street behind it, so the vista is closed on both sides of the dome
+    for sy, nm in ((1, 'KIT_BLDG_C'), (-1, 'KIT_BLDG_F')):
+        S.instance(kit[nm], 'endblock_%d' % sy, (ST['MOSQUE_X'] + 11.0, sy * 20.0, 0.0),
+                   (0, 0, -math.pi / 2), into=city)
 
     S.log('overhead')
     poles = place_overhead_poles(kit, over)
@@ -441,8 +521,6 @@ def main():
     S.cycles(samples=int(S.argval('--samples', 160, int)), res=(1920, 1080),
              device='CPU', bounces=6, clamp_indirect=6.0)
     sc = bpy.context.scene
-    sc.cycles.volume_step_rate = 8.0
-    sc.cycles.volume_max_steps = 128
     sc.render.use_persistent_data = True
 
     S.log('scene: %s' % S.stats())

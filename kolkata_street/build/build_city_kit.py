@@ -36,7 +36,7 @@ SHOP_COLOURS = ['#9c2a1e', '#1f4f6b', '#3a6b2f', '#b5741a', '#5a2d6b']
 
 
 def materials():
-    MAT['plaster'] = [T.plaster('city_plaster%d' % i, T.srgb(c), 0.92, 0.5)
+    MAT['plaster'] = [T.plaster('city_plaster%d' % i, T.srgb(c), 0.93, 0.68)
                       for i, c in enumerate(PLASTER_COLOURS)]
     MAT['brick'] = T.brick('city_brick')
     MAT['concrete'] = T.concrete('city_concrete')
@@ -318,12 +318,26 @@ def tin_shed(name='KIT_SHED', w=2.6, d=2.0, h=2.3):
     return coll
 
 
-def hoarding(name='KIT_HOARDING', w=4.2, h=2.6, legs=3.4):
+def hoarding(name='KIT_HOARDING', w=4.2, h=2.6, legs=3.4, seed=5):
+    """A painted roadside hoarding. Not a blank rectangle: a ground colour, a
+    band, a block where the artwork would be and a line of Latin lettering, which
+    is as much as reads from the street."""
     coll = S.coll(name)
+    rnd = random.Random(seed)
+    ground = rnd.choice(MAT['shop'])
+    accent = rnd.choice(MAT['shop'])
     p = [M.box((w, 0.12, h), (0, 0, legs + h / 2), name='panel', coll=coll,
-               mat=MAT['white']),
-         M.box((w - 0.2, 0.03, h - 0.2), (0, -0.08, legs + h / 2), name='print',
-               coll=coll, mat=random.Random(5).choice(MAT['shop']))]
+               mat=MAT['dark']),
+         M.box((w - 0.12, 0.03, h - 0.12), (0, -0.08, legs + h / 2), name='print',
+               coll=coll, mat=ground),
+         M.box((w - 0.12, 0.02, h * 0.26), (0, -0.10, legs + h * 0.18),
+               name='band', coll=coll, mat=accent),
+         M.box((w * 0.34, 0.02, h * 0.46), (-w * 0.26, -0.10, legs + h * 0.62),
+               name='artblock', coll=coll, mat=MAT['white'])]
+    t = M.text_solid('CALCUTTA', h * 0.17, 0.004, 'hoardtext', coll, MAT['white'],
+                     spacing=0.95)
+    M.place(t, (w * 0.16, -0.115, legs + h * 0.66), (math.pi / 2, 0, math.pi))
+    p.append(t)
     for sx in (-1, 1):
         p.append(M.box((0.10, 0.10, legs + h), (sx * (w / 2 - 0.3), 0,
                        (legs + h) / 2), name='leg', coll=coll, mat=MAT['steel']))
@@ -362,12 +376,12 @@ def tree(name='KIT_TREE', seed=3, height=9.0, spread=7.0):
             p.append(M.capsule_rod(tip, t2, 0.075, 5, 'twig', coll, MAT['bark']))
             tips.append(t2)
     for t in tips:
-        for k in range(3):
-            c = t + Vector((rnd.uniform(-1.5, 1.5), rnd.uniform(-1.5, 1.5),
-                            rnd.uniform(-0.5, 1.0)))
-            p.append(M.sphere(rnd.uniform(1.0, 1.9), (c.x, c.y, c.z), name='leaf',
-                              coll=coll, mat=MAT['foliage'], seg=12, rings=6,
-                              squash=rnd.uniform(0.5, 0.75)))
+        for k in range(6):
+            c = t + Vector((rnd.uniform(-1.7, 1.7), rnd.uniform(-1.7, 1.7),
+                            rnd.uniform(-0.7, 1.1)))
+            p.append(M.sphere(rnd.uniform(0.62, 1.15), (c.x, c.y, c.z), name='leaf',
+                              coll=coll, mat=MAT['foliage'], seg=10, rings=5,
+                              squash=rnd.uniform(0.45, 0.70)))
     ob = M.join(p, name, coll)
     S.log('%s: %d tris' % (name, M.tri_count(ob)))
     return coll
@@ -426,38 +440,61 @@ def autorickshaw(name='KIT_AUTO'):
     return coll
 
 
-def figure(name='KIT_FIGURE', seed=1, umbrella=False, walking=True):
-    """A walk-on. Stylised on purpose: at the distances these are used, a correct
-    silhouette and a block of sari or shirt colour do more than a detailed mesh,
-    and they stay cheap enough to scatter by the dozen."""
+def figure(name='KIT_FIGURE', seed=1, umbrella=False, walking=True, sari=False):
+    """A walk-on.
+
+    Stylised on purpose: at the distances these are used, correct proportion and
+    a block of sari or shirt colour do more than a detailed mesh, and they stay
+    cheap enough to scatter by the dozen. Built from tapered cylinders rather
+    than boxes, because a round shoulder and a round limb are most of what makes
+    a silhouette read as a person at twenty metres.
+    """
     coll = S.coll(name)
     rnd = random.Random(seed)
-    h = rnd.uniform(1.58, 1.80)
+    h = rnd.uniform(1.55, 1.78)
     cloth = rnd.choice(MAT['cloth'])
     cloth2 = rnd.choice(MAT['cloth'])
-    stride = 0.30 if walking else 0.08
-    p = [M.box((0.22, 0.34, h * 0.30), (0, 0, h * 0.70), name='torso', coll=coll,
-               mat=cloth, bevel=0.07, bevel_seg=2),
-         M.sphere(h * 0.072, (0, 0, h * 0.93), name='head', coll=coll,
-                  mat=MAT['skin'], seg=14, rings=8),
-         M.cyl(0.055, h * 0.10, (0, 0, h * 0.86), name='neck', coll=coll,
-               mat=MAT['skin'], seg=8)]
+    stride = 0.26 if walking else 0.06
+    z_hip, z_sh, z_head = 0.50 * h, 0.80 * h, 0.925 * h
+    p = [
+        M.cyl(0.125, 0.17, (0, 0, z_hip), name='pelvis', coll=coll, mat=cloth2,
+              seg=12, r_top=0.130),
+        M.cyl(0.132, z_sh - z_hip - 0.04, (0, 0, (z_hip + z_sh) / 2 - 0.01),
+              name='torso', coll=coll, mat=cloth, seg=12, r_top=0.150),
+        M.sphere(0.168, (0, 0, z_sh - 0.02), name='shoulders', coll=coll, mat=cloth,
+                 seg=14, rings=7, squash=0.50),
+        M.cyl(0.045, 0.085, (0, 0, z_sh + 0.045), name='neck', coll=coll,
+              mat=MAT['skin'], seg=8),
+        M.sphere(0.082, (0, 0, z_head), name='head', coll=coll, mat=MAT['skin'],
+                 seg=14, rings=8, squash=1.14),
+        M.sphere(0.086, (0, -0.006, z_head + 0.012), name='hair', coll=coll,
+                 mat=MAT['dark'], seg=14, rings=6, squash=0.82, hemi=True),
+    ]
+    if sari:
+        p.append(M.cyl(0.145, z_hip - 0.14, (0, 0, (z_hip - 0.08) / 2 + 0.05),
+                       name='skirt', coll=coll, mat=cloth, seg=14, r_top=0.185))
+        p.append(M.box((0.06, 0.30, 0.44), (-0.02, 0.13, z_sh - 0.22), (0, 0, 0.2),
+                       name='pallu', coll=coll, mat=cloth))
     for i, sy in enumerate((-1, 1)):
-        a = stride * (1 if i == 0 else -1)
-        p.append(M.cyl(0.062, h * 0.46, (a * 0.18, sy * 0.095, h * 0.26),
-                       (0, -a * 0.6, 0), name='leg%d' % i, coll=coll, mat=cloth2,
-                       seg=8))
-        p.append(M.cyl(0.050, h * 0.40, (-a * 0.16, sy * 0.215, h * 0.66),
-                       (0, a * 0.5, 0), name='arm%d' % i, coll=coll, mat=MAT['skin'],
-                       seg=8))
-        p.append(M.box((0.21, 0.09, 0.055), (a * 0.30, sy * 0.095, 0.028),
+        a_ = stride * (1 if i == 0 else -1)
+        if not sari:
+            p.append(M.capsule_rod((0, sy * 0.075, z_hip - 0.04),
+                                   (a_ * 0.42, sy * 0.085, 0.055), 0.054, 8,
+                                   'leg%d' % i, coll, cloth2))
+        p.append(M.capsule_rod((0, sy * 0.165, z_sh - 0.02),
+                               (-a_ * 0.30, sy * 0.195, z_hip - 0.03), 0.045, 8,
+                               'arm%d' % i, coll, MAT['skin']))
+        p.append(M.box((0.20, 0.085, 0.050), (a_ * 0.46, sy * 0.085, 0.026),
                        name='foot%d' % i, coll=coll, mat=MAT['dark']))
     if umbrella:
-        p.append(M.cyl(0.013, 0.95, (-0.14, 0.24, h * 0.80), name='umbshaft',
-                       coll=coll, mat=MAT['dark'], seg=8))
-        p.append(M.sphere(0.56, (-0.14, 0.24, h * 1.14), name='umbcanopy', coll=coll,
-                          mat=rnd.choice(MAT['cloth']), seg=16, rings=5, squash=0.42,
+        tip = (-0.16, 0.22, h * 1.02)
+        p.append(M.capsule_rod((-0.08, 0.17, z_sh - 0.10), tip, 0.011, 8, 'umbshaft',
+                               coll, MAT['dark']))
+        p.append(M.sphere(0.52, tip, name='umbcanopy', coll=coll,
+                          mat=rnd.choice(MAT['cloth']), seg=18, rings=6, squash=0.38,
                           hemi=True))
+        p.append(M.cyl(0.010, 0.10, (tip[0], tip[1], tip[2] + 0.22), name='umbtip',
+                       coll=coll, mat=MAT['dark'], seg=6))
     M.join(p, name, coll)
     return coll
 
@@ -539,9 +576,9 @@ def main():
     handcart()
     autorickshaw()
     mosque()
-    for i in range(6):
-        figure('KIT_FIGURE_%d' % i, seed=40 + i, umbrella=(i % 3 == 0),
-               walking=(i % 2 == 0))
+    for i in range(8):
+        figure('KIT_FIGURE_%d' % i, seed=40 + i, umbrella=(i % 4 == 0),
+               walking=(i % 2 == 0), sari=(i in (1, 4, 6)))
 
     # keep the file tidy: every item lives in its own collection, nothing loose
     for ob in list(root.objects):

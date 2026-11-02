@@ -175,14 +175,38 @@ def link_collection(blend_path, coll_name, link=True):
     bpy.ops.wm.link(filepath=inner, filename=coll_name, directory=directory,
                     link=link, instance_collections=False, autoselect=False)
     new = set(bpy.data.collections.keys()) - before
+    found = None
     for n in new:
         c = bpy.data.collections[n]
         if c.name.split('.')[0] == coll_name:
-            log('linked %s from %s' % (coll_name, os.path.basename(blend_path)))
-            return c
-    if coll_name in bpy.data.collections:
-        return bpy.data.collections[coll_name]
-    raise RuntimeError('could not link %s from %s' % (coll_name, blend_path))
+            found = c
+            break
+    if found is None and coll_name in bpy.data.collections:
+        found = bpy.data.collections[coll_name]
+    if found is None:
+        raise RuntimeError('could not link %s from %s' % (coll_name, blend_path))
+    unlink_everywhere(found)
+    log('linked %s from %s' % (coll_name, os.path.basename(blend_path)))
+    return found
+
+
+def unlink_everywhere(c):
+    """Take a collection out of the scene hierarchy without unloading it.
+
+    wm.link puts the linked collection into the active collection, so its objects
+    render at their authored positions -- at the origin -- *as well as* at every
+    instance of it. That puts a second copy of every asset in a heap in the middle
+    of the street. An instance empty keeps its reference to the collection
+    whether or not the collection is in the hierarchy, so dropping it here is
+    exactly right.
+    """
+    for parent in [bpy.context.scene.collection] + list(bpy.data.collections):
+        try:
+            if c.name in [ch.name for ch in parent.children]:
+                parent.children.unlink(c)
+        except (RuntimeError, ReferenceError):
+            pass
+    return c
 
 
 def instance(src_coll, name, loc=(0, 0, 0), rot=(0, 0, 0), scale=(1, 1, 1),
