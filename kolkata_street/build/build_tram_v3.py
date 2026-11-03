@@ -57,7 +57,7 @@ SRC = S.argval('--src', os.path.join(S.ASSETS, 'tram_new',
 
 MODEL_TO_M = 0.087                 # 1 mm of 1:87 model = 87 mm = 0.087 m
 SMALL_MM = 0.5                     # parts smaller than this (4.4 cm real) are dropped
-ROOF_TRIS = 7000                   # target per roof, from 69,000
+ROOF_TRIS = 3600                   # target per roof, from 69,000
 WHEEL_K = 0.8645                   # running gear lateral squeeze, see header
 RAIL_HALF_GAUGE = 0.7175           # the street's rails
 KEEP_INTERIOR = ('footwell', 'guard', 'riser', 'tread', 'step', 'floor',
@@ -314,7 +314,9 @@ def dissolve_flat(ob, angle_deg=2.0):
 # How hard to simplify a part, by how big it is at full size (metres). A 6 cm
 # spring coil does not need 760 triangles; a 7 m body shell does.
 #   (largest dimension below, fraction of triangles kept, floor)
-LOD = ((0.08, 0.10, 8), (0.25, 0.16, 12), (0.7, 0.26, 32), (2.5, 0.40, 80))
+# Tightened from (0.10, 0.16, 0.26, 0.40) to land the .glb under the portfolio's
+# 3 MB-per-file budget (scripts/check_budget.py). That budget is the site's, not ours.
+LOD = ((0.08, 0.08, 6), (0.25, 0.12, 10), (0.7, 0.20, 28), (2.5, 0.32, 64))
 
 
 def simplify(ob):
