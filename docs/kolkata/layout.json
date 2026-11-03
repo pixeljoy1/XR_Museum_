@@ -25,6 +25,7 @@
   "KIT_TRAMPOLE",
   "KIT_TREE_BIG",
   "KIT_TREE_SMALL",
+  "TRAM_V3",
   "ground"
  ],
  "instances": [
@@ -974,6 +975,15 @@
    "rotY": 180.8
   },
   {
+   "asset": "TRAM_V3",
+   "pos": [
+    7.0,
+    0.0835,
+    1.9
+   ],
+   "rotY": 0.0
+  },
+  {
    "asset": "KIT_TREE_BIG",
    "pos": [
     -14.0,
@@ -1169,6 +1179,22 @@
     20.0,
     3.0,
     1.0
+   ]
+  },
+  {
+   "name": "SHOT_11_tram_cab",
+   "label": "tram cab",
+   "lens": 35.0,
+   "note": "The tram cab close: wire lattice, headlamp, the Route 25 board.",
+   "pos": [
+    -5.2,
+    1.3,
+    -0.6
+   ],
+   "aim": [
+    -0.9,
+    1.75,
+    1.9
    ]
   }
  ],

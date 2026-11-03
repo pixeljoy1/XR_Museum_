@@ -231,6 +231,7 @@ def link_kit():
     """Link every asset collection once. Nothing is duplicated: the street holds
     instances, and the geometry stays in the three asset files."""
     blends = {
+        'tram_v3.blend': ['TRAM_V3'],
         'ambassador_taxi.blend': ['AMBASSADOR_TAXI'],
         'city_kit.blend': BUILDINGS + ['KIT_TRAMPOLE', 'KIT_SHED', 'KIT_HOARDING',
                                        'KIT_TREE_BIG', 'KIT_TREE_SMALL',
@@ -276,11 +277,19 @@ def place_overhead_poles(kit, coll):
 
 
 def place_traffic(kit, coll):
-    """One taxi, two autos and a handcart, all parked. No trams and nothing moves:
-    the street is a still set. Traffic keeps left, so a vehicle heading -X sits on
-    the -Y side. The tram model still exists (assets/tram_ctc.blend) and is simply
-    not placed here."""
+    """One tram, one taxi, two autos and a handcart, all parked: the street is a
+    still set. Traffic keeps left, so a vehicle heading -X sits on the -Y side.
+
+    The tram is the supplied V3.10 model (assets/tram_v3.blend, built from the
+    1:87 source by build_tram_v3.py). Its driver's cab is at -X, so with no
+    rotation it faces down the street towards a camera standing at negative X.
+    The old tram (assets/tram_ctc.blend) still builds on its own and is not placed."""
     zr = lambda y: z_road(y)
+
+    # origin on the wheel contact, so it sits on the rail head: the head stands
+    # 14 mm proud of the setts (see build_track)
+    S.instance(kit['TRAM_V3'], 'TRAM_v3', (7.0, -ST['TRACK_Y'], zr(-ST['TRACK_Y']) + 0.014),
+               (0, 0, 0), into=coll)
 
     # the one taxi: on the -Y side heading -X, so a camera down the street at
     # negative X sees it head-on
@@ -462,6 +471,12 @@ SHOTS = [
     dict(name='SHOT_09_crossing', loc=(19.5, 7.85, 1.70), aim=(-14.0, -2.00, 2.00),
          lens=50, fstop=4.0,
          note='Looking back up the street from the far kerb, across both tracks.'),
+    # the tram stands at x = 7 with its cab at x = -0.9. The page uses an 80 degree
+    # field of view where this lens gives about 54, so the camera stands close (4 m
+    # off the nose) to read the lattice, the headlamp and the Route 25 board in both
+    dict(name='SHOT_11_tram_cab', loc=(-5.2, 0.6, 1.30), aim=(-0.9, -1.9, 1.75),
+         lens=35, fstop=4.0,
+         note='The tram cab close: wire lattice, headlamp, the Route 25 board.'),
     dict(name='SHOT_10_far_end', loc=(100.0, 4.50, 2.20), aim=(20.0, -1.00, 3.00),
          lens=35, fstop=5.6,
          note='From the mosque end, the whole terrace running away down the street.'),

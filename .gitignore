@@ -14,3 +14,7 @@ build/build.log
 *.blend1
 # kolkata_street: the deploy folder make_web.sh builds
 /kolkata_street/dist/
+
+# the 46 MB supplied tram source: too big to push by the web uploader and not
+# needed to run the site. assets/tram_v3.blend is the street-scale asset built from it.
+/kolkata_street/assets/tram_new/*.blend

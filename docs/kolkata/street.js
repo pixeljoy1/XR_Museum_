@@ -583,6 +583,10 @@
   var LAMP_RE = /lamp|taillight|dest|neon|taxi_sign/i;
   var SHOP_RE = /shopglow/i;
   var WINDOW_RE = /city_glass/i;
+  // The tram's passengers' windows are one dark material that glows warm at night,
+  // as a lit saloon does. Its lamps (headlamp, route cards, markers) are named
+  // tram_lamp_* and so are already caught by LAMP_RE.
+  var TRAMWIN_RE = /tram_window_smoked/i;   // not the rubber seals, which are tram_windows_*
   var ROAD_RE = /^WALK_road|^SOLID_track/;
 
   AFRAME.registerComponent('daynight', {
@@ -594,7 +598,7 @@
     },
 
     collectMats: function () {
-      var lamps = [], shops = [], windows = [], roads = [], seen = {};
+      var lamps = [], shops = [], windows = [], roads = [], tramWin = [], seen = {};
       this.el.object3D.traverse(function (o) {
         if (!o.isMesh) { return; }
         var isRoad = ROAD_RE.test(o.name || '');
@@ -614,9 +618,11 @@
           if (lit && SHOP_RE.test(n)) { shops.push(m); }
           else if (lit && LAMP_RE.test(n)) { lamps.push(m); }
           else if (WINDOW_RE.test(n)) { windows.push(m); }
+          else if (TRAMWIN_RE.test(n)) { tramWin.push(m); }
         });
       });
-      this.mats = { lamps: lamps, shops: shops, windows: windows, roads: roads };
+      this.mats = { lamps: lamps, shops: shops, windows: windows, roads: roads,
+                    tramWin: tramWin };
     },
 
     toggle: function () {
@@ -670,6 +676,10 @@
         x.emissive = x.emissive || new THREE.Color();
         x.emissive.setHex(0xffcf8a);
         x.emissiveIntensity = lit * 6.0;
+      });
+      m.tramWin.forEach(function (x) {
+        x.emissive.setHex(0xffd08a);
+        x.emissiveIntensity = L.window * 1.6;
       });
       m.roads.forEach(function (x) {
         x.roughness = wet ? 0.07 : x.userData.dryRough;

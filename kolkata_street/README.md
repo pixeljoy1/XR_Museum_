@@ -379,17 +379,74 @@ So the scene is split:
 `street.js` calls `collect()` on the module once the city is placed, because
 everything arrives after the module has loaded.
 
-### A still set
+### A still set, and the tram
 
-Nothing in the street moves, and the web scene has **no trams**: one parked taxi,
-two auto-rickshaws and a handcart. The tram model is not placed in the street, so
-it is not exported or shipped; `assets/tram_ctc.blend` and `build/build_tram.py`
-are unchanged and still build on their own. To put one back, add an
-`S.instance(kit['TRAM_CTC'], ...)` line to `place_traffic` in `build_street.py`
-and link it in `link_kit`.
+Nothing in the street moves. It holds **one tram** (the supplied V3.10 model),
+one parked taxi, two auto-rickshaws and a handcart.
 
-The exporter removes any model the street no longer uses from `docs/kolkata/models/`,
-so a retired asset cannot sit there shipping to every visitor as dead weight.
+The tram is `assets/tram_v3.blend`, built by `build/build_tram_v3.py` from the
+supplied 1:87 source (`assets/tram_new/Kolkata_Tram_V3_10_Rounded_Signature_Heads.blend`,
+46 MB, **not committed**: too big for the web uploader and not needed to run the
+site). To rebuild it, put that file at that path and run:
+
+```bash
+blender -b -P build/build_tram_v3.py -- --src /path/to/the/source.blend
+blender -b -P build/preview_asset.py -- --blend assets/tram_v3.blend --coll TRAM_V3 --out renders/_tram
+```
+
+The source is a hand-built display model of 1,087 meshes and 467,000 triangles
+in millimetres, so the build reduces it to something a headset can hold:
+
+| | source | street |
+|---|---|---|
+| triangles | 467,000 | 111,000 |
+| size on the wire | n/a | 3.4 MB (4.6 MB as `.json`, gzipped in transit) |
+| scale | 1:87, 1 unit = 1 mm | metres, 15.8 m long, 3.05 m wide |
+
+**Dropped:** the display plinth, every camera/light/empty, the seats and benches,
+roof locating receivers, the stair-tread grooves, and every part smaller than
+4.4 cm at full size (panel fasteners, rivets). **Kept:** shells, both roofs, the
+fascia, wire-mesh cab screens, lamps, route boards, the trolley pole and rope,
+entrances, bogies and wheels. Each remaining part is simplified by how big it
+really is, so a 6 cm spring coil gets 8 triangles and a 7 m shell keeps its
+detail.
+
+**Three things in the source that are not obvious, and cost real time:**
+
+- **The livery is procedural and measured from an empty.** The blue/white bands
+  are a node graph whose Texture Coordinate node is pointed at an empty,
+  *"Modern livery | prototype coordinate reference"*, scaled 11.494x at the world
+  origin. So its thresholds (1.44, 2.64) are prototype **metres in world space**,
+  not each part's local millimetres. Evaluated locally, the whole shell comes out
+  navy and the seams light blue. The build reads that empty's transform, cuts the
+  geometry along the graph's planes, and gives each face the flat colour the graph
+  produces there, so the livery survives into glTF.
+- **`Mesh.materials.clear()` resets every face's material index to 0.** Rebuilding
+  a part's slots without saving and restoring the indices collapses every
+  multi-material part onto its first material: the Route 25 board lost its photo
+  face, and windows, frames and roof rims all took one colour.
+- **Joined parts must share one UV layer name.** The roof's is `UVMap`; the board
+  calls its own *"Supplied photograph board crop"*. Joined as they were they became
+  two layers, the material read the first, and the board sampled one dark pixel.
+
+**The wheels were wider than the track.** The source's wheelsets are 1.66 m between
+wheel centres at full size, against the street's 1,435 mm rails, so as supplied the
+wheels roll beside the rail. Only the running gear is narrowed (x0.8645 about its
+own centre line) so the wheels land on the rails; the body is untouched. If you
+would rather have the model exactly as built, set `WHEEL_K = 1.0` and widen the
+street's gauge to match.
+
+**Night.** The source drives its lamps from a custom property (`enabled` x 7 on
+the headlamp, x 3 on the route cards). Those values are baked in as the materials'
+emission, named `tram_lamp_*`, so the page's night mode finds and lights them
+(headlamp, route cards, marker lamps), and the saloon windows (`tram_window_smoked`)
+glow warm. Its two textures are kept: the supplied roof colour and seam normal map
+(down-sized 4x, from 6800x1280) and the Route 25 board photograph. glTF carries one
+attribute set per primitive, so the two textured parts are a separate mesh and
+everything else carries no UVs, which took the tram from 9.5 MB to 3.4 MB.
+
+The old tram (`assets/tram_ctc.blend`, `build/build_tram.py`) still builds on its
+own and is not placed.
 
 ### When a behaviour does not work on the headset
 

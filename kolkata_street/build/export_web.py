@@ -104,6 +104,13 @@ def flatten_materials():
         if bsdf is None:
             continue
         nt = mat.node_tree
+        # A material whose colour comes from an IMAGE is already something glTF can
+        # carry, and flattening it would throw the texture away. The tram's roof
+        # (colour and seam normal map) and its Route 25 board are like this.
+        bc = bsdf.inputs['Base Color']
+        if bc.is_linked and bc.links[0].from_node.type == 'TEX_IMAGE':
+            S.log('  kept textured material %s' % mat.name)
+            continue
         col = resolve_colour(bsdf.inputs['Base Color'])
         rough = resolve_float(bsdf.inputs['Roughness'], 0.6)
         for name in ('Base Color', 'Roughness', 'Normal', 'Metallic',
@@ -165,8 +172,12 @@ def merge_similar_materials(colour_step=0.045, rough_step=0.18):
         # no primitive is combined -- and it costs the page its per-building
         # window material, which is what the night lighting varies to light the
         # terrace unevenly instead of switching every window on at once.
-        if 'glass' in mat.name.lower() or 'windscreen' in mat.name.lower():
-            continue
+        low = mat.name.lower()
+        if any(k in low for k in ('glass', 'windscreen', 'lamp', 'tram_window_smoked')):
+            continue           # the page finds these by name to light them at night
+        b0 = next((x for x in mat.node_tree.nodes if x.type == 'BSDF_PRINCIPLED'), None)
+        if b0 is not None and b0.inputs['Base Color'].is_linked:
+            continue           # carries a texture: its colour value means nothing
         bsdf = next((x for x in mat.node_tree.nodes
                      if x.type == 'BSDF_PRINCIPLED'), None)
         if bsdf is None:
@@ -202,8 +213,8 @@ def export_glb(objs, path):
         filepath=path, export_format='GLB', use_selection=True,
         export_apply=True, export_yup=True, export_cameras=False,
         export_lights=False, export_animations=False,
-        export_materials='EXPORT', export_image_format='NONE',
-        export_texcoords=False, export_normals=True,
+        export_materials='EXPORT', export_image_format='AUTO',
+        export_texcoords=True, export_normals=True,
         export_tangents=False, export_extras=False,
         export_skins=False, export_morph=False)
     tris = sum(M.tri_count(o) for o in objs if o.type == 'MESH')
