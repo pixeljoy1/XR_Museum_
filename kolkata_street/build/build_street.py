@@ -1,9 +1,9 @@
 """The Kolkata street  ->  scene/kolkata_street.blend
 
-This is the assembly. It builds nothing that already exists: the tram, the taxi
-and the city kit are LINKED in from their own .blend files and placed as
-collection instances, so every tram in the street is the one tram, and
-re-running build_tram.py and saving updates all of them.
+This is the assembly. It builds nothing that already exists: the taxi and the
+city kit are LINKED in from their own .blend files and placed as collection
+instances. (The tram is not placed in this scene; assets/tram_ctc.blend still
+builds on its own.)
 
 What this file does build is the ground the others stand on:
 
@@ -231,7 +231,6 @@ def link_kit():
     """Link every asset collection once. Nothing is duplicated: the street holds
     instances, and the geometry stays in the three asset files."""
     blends = {
-        'tram_ctc.blend': ['TRAM_CTC'],
         'ambassador_taxi.blend': ['AMBASSADOR_TAXI'],
         'city_kit.blend': BUILDINGS + ['KIT_TRAMPOLE', 'KIT_SHED', 'KIT_HOARDING',
                                        'KIT_TREE_BIG', 'KIT_TREE_SMALL',
@@ -277,22 +276,15 @@ def place_overhead_poles(kit, coll):
 
 
 def place_traffic(kit, coll):
-    """Two trams, taxis, autos and a handcart. Traffic keeps left, so the
-    +X-bound stream is on the +Y side and the -X-bound stream on the -Y side."""
+    """One taxi, two autos and a handcart, all parked. No trams and nothing moves:
+    the street is a still set. Traffic keeps left, so a vehicle heading -X sits on
+    the -Y side. The tram model still exists (assets/tram_ctc.blend) and is simply
+    not placed here."""
     zr = lambda y: z_road(y)
 
-    # The hero tram is on the -Y track heading -X, so it comes towards a camera
-    # standing down the street at negative X. The second one goes the other way
-    # on the +Y track.
-    S.instance(kit['TRAM_CTC'], 'TRAM_near', (7.0, -ST['TRACK_Y'], zr(-ST['TRACK_Y'])),
-               (0, 0, math.pi), into=coll)
-    S.instance(kit['TRAM_CTC'], 'TRAM_far', (54.0, ST['TRACK_Y'], zr(ST['TRACK_Y'])),
-               (0, 0, 0), into=coll)
-
-    # taxis: x, y, heading -- one line each, so they are easy to move
-    taxis = [(-14.0, -5.00, math.pi), (5.5, -5.25, math.pi), (27.0, -4.80, math.pi),
-             (59.0, -5.10, math.pi), (-22.0, 4.85, 0.0), (12.0, 5.20, 0.0),
-             (38.0, 4.70, 0.0), (76.0, 5.05, 0.0)]
+    # the one taxi: on the -Y side heading -X, so a camera down the street at
+    # negative X sees it head-on
+    taxis = [(-14.0, -5.00, math.pi)]
     for i, (x, y, h) in enumerate(taxis):
         S.instance(kit['AMBASSADOR_TAXI'], 'taxi_%d' % i, (x, y, zr(y)),
                    (0, 0, h + rnd.uniform(-0.03, 0.03)), into=coll)
@@ -439,9 +431,11 @@ def add_mist_haze(sc, start=18.0, depth=190.0, colour=(0.76, 0.79, 0.84),
 # Each entry is a real shot. Move them, add to them: that is the whole point of
 # the file. `aim` is a point in the street, not a rotation.
 SHOTS = [
-    dict(name='SHOT_01_tram_nose', loc=(-25.0, -4.60, 1.30), aim=(-1.0, -2.20, 1.95),
+    # an auto and a handcart are parked at x = -30 and -36 on the -Y side, so the
+    # camera stands well back and a lane inboard of them
+    dict(name='SHOT_01_taxi_head_on', loc=(-42.0, -2.60, 1.25), aim=(-14.0, -5.00, 0.95),
          lens=85, fstop=2.8,
-         note='Low and long, the tram coming at you, like the first watercolour.'),
+         note='Low and long, the taxi facing you down the wet street.'),
     dict(name='SHOT_02_wet_wide', loc=(-16.0, 3.20, 1.60), aim=(16.0, -1.00, 2.30),
          lens=24, fstop=5.6,
          note='Wide, standing in the road, the whole wet street and the reflections.'),
@@ -462,25 +456,25 @@ SHOTS = [
          note='Up among the trolley wire and the cable, looking down the line.'),
     dict(name='SHOT_08_taxi_three_quarter', loc=(-24.0, -7.90, 1.10),
          aim=(-14.5, -5.00, 0.95), lens=50, fstop=2.2,
-         note='Taxi close in three-quarter, the tram soft behind it.'),
+         note='Taxi close in three-quarter, the street soft behind it.'),
     # Poles stand every 23 m from x = -84, so x = 8 and x = 31 are occupied.
     # Standing at 10 put one straight down the middle of the frame.
     dict(name='SHOT_09_crossing', loc=(19.5, 7.85, 1.70), aim=(-14.0, -2.00, 2.00),
          lens=50, fstop=4.0,
          note='Looking back up the street from the far kerb, across both tracks.'),
-    dict(name='SHOT_10_tram_rear', loc=(31.0, -5.60, 3.00), aim=(5.0, -1.90, 2.00),
-         lens=70, fstop=4.0,
-         note='Behind and above the near tram, the street opening out past it.'),
+    dict(name='SHOT_10_far_end', loc=(100.0, 4.50, 2.20), aim=(20.0, -1.00, 3.00),
+         lens=35, fstop=5.6,
+         note='From the mosque end, the whole terrace running away down the street.'),
 ]
 
 
 def build_cameras(coll):
     cams = [C.camera(s['name'], s['loc'], s['aim'], s['lens'], s['fstop'],
                      coll=coll, note=s['note']) for s in SHOTS]
-    # a dolly that runs up the middle of the street, aimed at the near tram
+    # a dolly that runs up the middle of the street, aimed at the taxi
     C.dolly_rig('CAM_DOLLY', [(-60, 0.4, 2.2), (-34, 3.0, 1.8), (-8, 4.2, 1.6),
                               (22, 2.0, 2.4), (62, -0.6, 3.0), (108, 0.2, 3.6)],
-                (7.0, -1.9, 2.0), lens=40, frames=250, fstop=5.6, coll=coll)
+                (-14.0, -5.0, 1.0), lens=40, frames=250, fstop=5.6, coll=coll)
     bpy.context.scene.camera = cams[0]
     return cams
 

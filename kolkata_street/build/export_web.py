@@ -251,6 +251,15 @@ def main():
         if not linked_here:
             root.children.unlink(coll)
 
+    # --- drop models the scene no longer uses. The exporter only ever writes, so
+    # an asset that has been removed from the street (the tram, say) would sit in
+    # models/ forever and keep shipping to every visitor as dead weight.
+    keep = set(n + '.glb' for n in used) | {'ground.glb'}
+    for f in os.listdir(MODELS):
+        if f.endswith('.glb') and f not in keep:
+            os.remove(os.path.join(MODELS, f))
+            S.log('removed stale %s' % f)
+
     # --- the ground, as one file
     ground = [bpy.data.objects[n] for n in GROUND if n in bpy.data.objects]
     total += export_glb(ground, os.path.join(MODELS, 'ground.glb'))
@@ -274,7 +283,6 @@ def main():
         'assets': sorted(used.keys()) + ['ground'],
         'instances': instances,
         'viewpoints': views,
-        'tram_asset': 'TRAM_CTC',
         'track_y': [-1.90, 1.90],
         'street': {'x0': -90.0, 'x1': 158.0, 'road_half_width': 7.0,
                    'kerb_h': 0.155},

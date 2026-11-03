@@ -25,7 +25,6 @@
   "KIT_TRAMPOLE",
   "KIT_TREE_BIG",
   "KIT_TREE_SMALL",
-  "TRAM_CTC",
   "ground"
  ],
  "instances": [
@@ -471,229 +470,229 @@
    "rotY": -90.0
   },
   {
-   "asset": "KIT_FIGURE_2",
-   "pos": [
-    76.8706,
-    0.155,
-    7.7151
-   ],
-   "rotY": 218.032
-  },
-  {
    "asset": "KIT_FIGURE_1",
    "pos": [
-    20.8025,
+    85.3212,
     0.155,
-    -8.3762
+    7.9595
    ],
-   "rotY": 292.218
+   "rotY": 105.395
   },
   {
    "asset": "KIT_FIGURE_5",
    "pos": [
-    49.5605,
+    33.6447,
     0.155,
-    8.7361
+    -8.2716
    ],
-   "rotY": 125.144
+   "rotY": 350.014
   },
   {
    "asset": "KIT_FIGURE_1",
    "pos": [
-    110.9949,
+    48.1039,
     0.155,
-    -7.8935
+    7.9024
    ],
-   "rotY": 186.726
+   "rotY": 354.432
+  },
+  {
+   "asset": "KIT_FIGURE_4",
+   "pos": [
+    21.7586,
+    0.155,
+    -9.0984
+   ],
+   "rotY": 261.452
+  },
+  {
+   "asset": "KIT_FIGURE_4",
+   "pos": [
+    0.0517,
+    0.155,
+    8.6871
+   ],
+   "rotY": 232.998
   },
   {
    "asset": "KIT_FIGURE_7",
    "pos": [
-    94.0151,
+    -6.9622,
     0.155,
-    8.7937
+    -9.1552
    ],
-   "rotY": 164.053
+   "rotY": 43.516
+  },
+  {
+   "asset": "KIT_FIGURE_6",
+   "pos": [
+    28.9787,
+    0.155,
+    9.0258
+   ],
+   "rotY": 245.948
+  },
+  {
+   "asset": "KIT_FIGURE_6",
+   "pos": [
+    15.7461,
+    0.155,
+    -8.6365
+   ],
+   "rotY": 29.703
+  },
+  {
+   "asset": "KIT_FIGURE_0",
+   "pos": [
+    83.5997,
+    0.155,
+    7.8406
+   ],
+   "rotY": 178.042
+  },
+  {
+   "asset": "KIT_FIGURE_5",
+   "pos": [
+    -14.4745,
+    0.155,
+    -8.9053
+   ],
+   "rotY": 81.336
+  },
+  {
+   "asset": "KIT_FIGURE_6",
+   "pos": [
+    -11.7496,
+    0.155,
+    8.51
+   ],
+   "rotY": 119.356
+  },
+  {
+   "asset": "KIT_FIGURE_5",
+   "pos": [
+    110.4922,
+    0.155,
+    -8.8582
+   ],
+   "rotY": 308.454
+  },
+  {
+   "asset": "KIT_FIGURE_4",
+   "pos": [
+    -40.3736,
+    0.155,
+    8.8952
+   ],
+   "rotY": 3.4
+  },
+  {
+   "asset": "KIT_FIGURE_1",
+   "pos": [
+    27.5441,
+    0.0695,
+    1.2407
+   ],
+   "rotY": 290.149
+  },
+  {
+   "asset": "KIT_FIGURE_7",
+   "pos": [
+    55.2147,
+    0.0554,
+    3.5818
+   ],
+   "rotY": 125.413
   },
   {
    "asset": "KIT_FIGURE_3",
    "pos": [
-    42.9162,
-    0.155,
-    -7.8321
+    40.1238,
+    0.0543,
+    -3.676
    ],
-   "rotY": 280.314
+   "rotY": 289.02
   },
   {
    "asset": "KIT_FIGURE_6",
    "pos": [
-    -61.548,
-    0.155,
-    8.4917
-   ],
-   "rotY": 112.272
-  },
-  {
-   "asset": "KIT_FIGURE_5",
-   "pos": [
-    78.1914,
-    0.155,
-    -8.0617
-   ],
-   "rotY": 116.941
-  },
-  {
-   "asset": "KIT_FIGURE_5",
-   "pos": [
-    26.3171,
-    0.155,
-    8.2307
-   ],
-   "rotY": 326.392
-  },
-  {
-   "asset": "KIT_FIGURE_0",
-   "pos": [
-    72.0082,
-    0.155,
-    -9.0716
-   ],
-   "rotY": 145.031
-  },
-  {
-   "asset": "KIT_FIGURE_6",
-   "pos": [
-    -42.8839,
-    0.155,
-    8.9902
-   ],
-   "rotY": 79.221
-  },
-  {
-   "asset": "KIT_FIGURE_2",
-   "pos": [
-    64.7238,
-    0.155,
-    -8.2577
-   ],
-   "rotY": 283.243
-  },
-  {
-   "asset": "KIT_FIGURE_4",
-   "pos": [
-    109.4467,
-    0.155,
-    9.2664
-   ],
-   "rotY": 358.67
-  },
-  {
-   "asset": "KIT_FIGURE_0",
-   "pos": [
-    61.3749,
-    0.0697,
-    1.1558
-   ],
-   "rotY": 137.316
-  },
-  {
-   "asset": "KIT_FIGURE_4",
-   "pos": [
-    58.1236,
-    0.045,
-    4.424
-   ],
-   "rotY": 236.343
-  },
-  {
-   "asset": "KIT_FIGURE_4",
-   "pos": [
-    32.452,
-    0.0402,
-    4.7669
-   ],
-   "rotY": 300.68
-  },
-  {
-   "asset": "KIT_FIGURE_2",
-   "pos": [
-    63.4237,
+    26.3364,
     0.0695,
-    2.3036
+    1.5152
    ],
-   "rotY": 159.921
+   "rotY": 267.355
   },
   {
    "asset": "KIT_FIGURE_5",
    "pos": [
-    51.8513,
-    0.0435,
-    4.5394
+    24.8895,
+    0.0695,
+    -2.0076
    ],
-   "rotY": 84.303
-  },
-  {
-   "asset": "KIT_FIGURE_4",
-   "pos": [
-    -44.1141,
-    0.155,
-    -8.5259
-   ],
-   "rotY": 64.632
+   "rotY": 96.298
   },
   {
    "asset": "KIT_FIGURE_7",
    "pos": [
-    33.2102,
+    47.2497,
     0.155,
-    7.9623
+    -8.468
    ],
-   "rotY": 319.227
+   "rotY": 152.078
   },
   {
-   "asset": "KIT_FIGURE_6",
+   "asset": "KIT_FIGURE_4",
    "pos": [
-    28.1484,
+    90.5469,
     0.155,
-    -9.1117
+    9.1434
    ],
-   "rotY": 231.508
+   "rotY": 352.27
   },
   {
-   "asset": "KIT_FIGURE_6",
+   "asset": "KIT_FIGURE_2",
    "pos": [
-    -79.5815,
+    129.3301,
     0.155,
-    8.2993
+    -7.9734
    ],
-   "rotY": 132.412
+   "rotY": 185.734
   },
   {
-   "asset": "KIT_FIGURE_0",
+   "asset": "KIT_FIGURE_4",
    "pos": [
-    -34.5998,
+    -42.2791,
     0.155,
-    -7.9468
+    8.5626
    ],
-   "rotY": 219.495
+   "rotY": 58.988
+  },
+  {
+   "asset": "KIT_FIGURE_3",
+   "pos": [
+    106.3104,
+    0.155,
+    -8.524
+   ],
+   "rotY": 317.476
   },
   {
    "asset": "KIT_FIGURE_5",
    "pos": [
-    -53.4299,
+    55.115,
     0.155,
-    9.2761
+    7.7032
    ],
-   "rotY": 174.355
+   "rotY": 134.772
   },
   {
-   "asset": "KIT_FIGURE_6",
+   "asset": "KIT_FIGURE_2",
    "pos": [
-    103.5352,
+    -2.7207,
     0.155,
-    -8.8626
+    -8.0459
    ],
-   "rotY": 137.162
+   "rotY": 55.493
   },
   {
    "asset": "KIT_HANDCART",
@@ -975,94 +974,13 @@
    "rotY": 180.8
   },
   {
-   "asset": "AMBASSADOR_TAXI",
-   "pos": [
-    5.5,
-    0.0328,
-    5.25
-   ],
-   "rotY": 179.428
-  },
-  {
-   "asset": "AMBASSADOR_TAXI",
-   "pos": [
-    27.0,
-    0.0397,
-    4.8
-   ],
-   "rotY": 179.18
-  },
-  {
-   "asset": "AMBASSADOR_TAXI",
-   "pos": [
-    59.0,
-    0.0352,
-    5.1
-   ],
-   "rotY": 178.424
-  },
-  {
-   "asset": "AMBASSADOR_TAXI",
-   "pos": [
-    -22.0,
-    0.039,
-    -4.85
-   ],
-   "rotY": 0.319
-  },
-  {
-   "asset": "AMBASSADOR_TAXI",
-   "pos": [
-    12.0,
-    0.0336,
-    -5.2
-   ],
-   "rotY": 0.987
-  },
-  {
-   "asset": "AMBASSADOR_TAXI",
-   "pos": [
-    38.0,
-    0.0412,
-    -4.7
-   ],
-   "rotY": -1.161
-  },
-  {
-   "asset": "AMBASSADOR_TAXI",
-   "pos": [
-    76.0,
-    0.036,
-    -5.05
-   ],
-   "rotY": -0.712
-  },
-  {
-   "asset": "TRAM_CTC",
-   "pos": [
-    54.0,
-    0.0695,
-    -1.9
-   ],
-   "rotY": 0.0
-  },
-  {
-   "asset": "TRAM_CTC",
-   "pos": [
-    7.0,
-    0.0695,
-    1.9
-   ],
-   "rotY": 180.0
-  },
-  {
    "asset": "KIT_TREE_BIG",
    "pos": [
     -14.0,
     0.155,
     8.3
    ],
-   "rotY": 194.721
+   "rotY": 120.039
   },
   {
    "asset": "KIT_TREE_SMALL",
@@ -1071,7 +989,7 @@
     0.155,
     -8.3
    ],
-   "rotY": 67.897
+   "rotY": 213.272
   },
   {
    "asset": "KIT_TREE_SMALL",
@@ -1080,7 +998,7 @@
     0.155,
     -8.3
    ],
-   "rotY": 128.535
+   "rotY": 94.072
   },
   {
    "asset": "KIT_TREE_BIG",
@@ -1089,24 +1007,24 @@
     0.155,
     8.3
    ],
-   "rotY": 350.014
+   "rotY": 14.964
   }
  ],
  "viewpoints": [
   {
-   "name": "SHOT_01_tram_nose",
-   "label": "tram nose",
+   "name": "SHOT_01_taxi_head_on",
+   "label": "taxi head on",
    "lens": 85.0,
-   "note": "Low and long, the tram coming at you, like the first watercolour.",
+   "note": "Low and long, the taxi facing you down the wet street.",
    "pos": [
-    -25.0,
-    1.3,
-    4.6
+    -42.0,
+    1.25,
+    2.6
    ],
    "aim": [
-    -1.0,
-    1.95,
-    2.2
+    -14.0,
+    0.95,
+    5.0
    ]
   },
   {
@@ -1209,7 +1127,7 @@
    "name": "SHOT_08_taxi_three_quarter",
    "label": "taxi three quarter",
    "lens": 50.0,
-   "note": "Taxi close in three-quarter, the tram soft behind it.",
+   "note": "Taxi close in three-quarter, the street soft behind it.",
    "pos": [
     -24.0,
     1.1,
@@ -1238,23 +1156,22 @@
    ]
   },
   {
-   "name": "SHOT_10_tram_rear",
-   "label": "tram rear",
-   "lens": 70.0,
-   "note": "Behind and above the near tram, the street opening out past it.",
+   "name": "SHOT_10_far_end",
+   "label": "far end",
+   "lens": 35.0,
+   "note": "From the mosque end, the whole terrace running away down the street.",
    "pos": [
-    31.0,
-    3.0,
-    5.6
+    100.0,
+    2.2,
+    -4.5
    ],
    "aim": [
-    5.0,
-    2.0,
-    1.9
+    20.0,
+    3.0,
+    1.0
    ]
   }
  ],
- "tram_asset": "TRAM_CTC",
  "track_y": [
   -1.9,
   1.9

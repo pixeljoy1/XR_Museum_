@@ -356,7 +356,7 @@ dialog, so **this page adds no camera and no controllers of its own**:
 | | |
 |---|---|
 | **Quest** | Right stick walk and turn. Right trigger walks where the hand points, harder is faster. Left stick forward teleports. **A** walk/fly, **B** or **Y** reset dialog, **X** next viewpoint. Flying: right trigger glides, left trigger or right stick back reverses, tilt the right hand while a trigger is held to climb or dive, left stick for height, wrist steers. |
-| **Desktop** | `Space` trigger, `WASD` stick, `Shift` reverse, `E`/`Q` up and down, `F` walk/fly, `R` reset, `Esc` close. Plus this page's own: `1`…`0` viewpoints, `V` next, `T` hold the traffic, `L` shadows, `I` input monitor. |
+| **Desktop** | `Space` trigger, `WASD` stick, `Shift` reverse, `E`/`Q` up and down, `F` walk/fly, `R` reset, `Esc` close. Plus this page's own: `1`…`0` viewpoints, `V` next, `N` night, `G` wet road, `L` shadows, `I` input monitor. |
 
 ### Meeting the module's world contract
 
@@ -379,58 +379,17 @@ So the scene is split:
 `street.js` calls `collect()` on the module once the city is placed, because
 everything arrives after the module has loaded.
 
-### The traffic moves
+### A still set
 
-The street drives itself, which is most of what makes it feel like a street
-rather than a model of one. `SPEED` at the top of the traffic section of
-`street.js`:
+Nothing in the street moves, and the web scene has **no trams**: one parked taxi,
+two auto-rickshaws and a handcart. The tram model is not placed in the street, so
+it is not exported or shipped; `assets/tram_ctc.blend` and `build/build_tram.py`
+are unchanged and still build on their own. To put one back, add an
+`S.instance(kit['TRAM_CTC'], ...)` line to `place_traffic` in `build_street.py`
+and link it in `link_kit`.
 
-| | m/s | |
-|---|---|---|
-| Tram | 3.0 | about 11 km/h — a Kolkata tram trudges, and looks it |
-| Taxi | 7.2 | about 26 km/h |
-| Auto-rickshaw | 5.6 | about 20 km/h |
-
-Nothing is re-placed: `layout.json` stays the source of truth and only a
-distance along each vehicle's own heading is animated, wrapping round the length
-of the street. The two trams are clones and move directly; the taxis and autos
-are instanced, so their instance matrices are rewritten each frame — eight
-vehicles across thirteen sub-meshes is a few hundred matrix writes, which costs
-nothing next to drawing them.
-
-Each vehicle's **collision proxy is carried along with it**, and its cached
-world box refreshed, because the locomotion module culls its raycasts against
-that box: a stale one means you get stopped by where the taxi used to be. `T`
-holds the traffic.
-
-### Day, night and the wet road
-
-A control panel, top right: **Night**, **Wet road**, **Traffic**, **Shadows**.
-Keys `N`, `G`, `T`, `L`. In a headset there is no keyboard, so the two scene
-settings are on the thumbstick clicks — **right stick click** for night, **left
-stick click** for the wet road — which are the only buttons `xr-locomotion`
-leaves free.
-
-**The reflections are baked from the city, not from a gradient.** The page
-starts with a vertical gradient environment map so metal is not black, and then,
-once everything is placed, renders one cube from the middle of the street at
-3.2 m and runs it through `PMREMGenerator`. After that the wet road and the
-chrome reflect actual buildings, trams and taxis, which is what makes the
-monsoon look read. It costs six renders once, nothing per frame, and it is
-re-baked when the light changes.
-
-Night drives four things at once: the sky, fog and lights; the lamp materials
-(`city_lamp`, `amb_lamp`, tram lamps, the TAXI sign) back up to the emissive
-strength they were authored with in Blender; the shop interiors; and the
-building windows, which get a warm emissive they do not have by day.
-
-Each building GLB carries its own copy of `city_glass`, so the window brightness
-is varied by a hash per material and the terrace lights unevenly rather than
-every window coming on at once. That only works because `export_web.py`
-deliberately **excludes glazing from the material merge** — merging it saves
-nothing, since glass only ever merges with other glass and those live in
-different asset files, but it would cost the page its per-building window
-material.
+The exporter removes any model the street no longer uses from `docs/kolkata/models/`,
+so a retired asset cannot sit there shipping to every visitor as dead weight.
 
 ### When a behaviour does not work on the headset
 

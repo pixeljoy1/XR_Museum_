@@ -143,7 +143,7 @@
       // always one, so layout.json can ask for self-contained .json glTF
       // instead. GLTFLoader sniffs the content, not the name.
       var ext = L.asset_ext || '.glb';
-      var walk = [], trams = [], batches = 0;
+      var walk = [], batches = 0;
       var allBatches = self.el.sceneEl.batches = {};
 
       var byAsset = {};
@@ -199,18 +199,6 @@
           return;
         }
         var list = byAsset[name] || [];
-        if (name === L.tram_asset) {
-          list.forEach(function (inst) {
-            var o = root.clone(true);
-            o.position.set(inst.pos[0], inst.pos[1], inst.pos[2]);
-            o.rotation.set(0, THREE.MathUtils.degToRad(inst.rotY), 0);
-            city.add(o);
-            trams.push({ obj: o,
-                         dir: Math.cos(THREE.MathUtils.degToRad(inst.rotY)) });
-          });
-          self.el.sceneEl.trams = trams;
-          return;
-        }
         // Chunk along the street, but only where it buys anything. A batch that
         // spans the whole 250 m can never be frustum-culled, so every triangle
         // in it is submitted every frame; a batch of two is a draw call that
@@ -247,13 +235,11 @@
         });
       })).then(function () {
         hideProgress();
-        var proxyMap = self.el.sceneEl.proxies = {};
-        var proxies = buildProxies(L, foot, proxyMap);
+        var proxies = buildProxies(L, foot);
         // The module caches a world box per collision mesh, so it has to be told
         // the world changed. Everything above was added after it loaded.
         var xrl = self.el.sceneEl.components['xr-locomotion'];
         if (xrl) { xrl.collect(); }
-        self.el.sceneEl.setAttribute('traffic', '');
         self.el.sceneEl.setAttribute('quest-input', '');
         self.el.sceneEl.setAttribute('daynight', '');
         document.getElementById('views').hidden = false;
@@ -298,25 +284,21 @@
       parent.add(im);
       batch.meshes.push(im);
     });
-    applyBatch(batch, null);
+    applyBatch(batch);
     return batch;
   }
 
-  // Write every instance matrix. `offsets` moves each placement along its own
-  // heading, which is how the traffic drives: the layout stays the source of
-  // truth and only a distance is animated.
+  // Write every instance matrix from the layout.
   var _m = new THREE.Matrix4(), _q = new THREE.Quaternion();
   var _p = new THREE.Vector3(), _one = new THREE.Vector3(1, 1, 1);
   var _e = new THREE.Euler();
-  function applyBatch(batch, offsets) {
+  function applyBatch(batch) {
     for (var k = 0; k < batch.meshes.length; k++) {
       var im = batch.meshes[k], local = batch.parts[k].local;
       for (var i = 0; i < batch.list.length; i++) {
         var inst = batch.list[i];
         var r = THREE.MathUtils.degToRad(inst.rotY);
-        var d = offsets ? offsets[i] : 0;
-        _p.set(inst.pos[0] + Math.cos(r) * d, inst.pos[1],
-               inst.pos[2] - Math.sin(r) * d);
+        _p.set(inst.pos[0], inst.pos[1], inst.pos[2]);
         _e.set(0, r, 0); _q.setFromEuler(_e);
         _m.compose(_p, _q, _one);
         _m.multiply(local);
@@ -401,8 +383,7 @@
       m.position.set(inst.pos[0] + w.cx * c + w.cz * sn,
                      inst.pos[1] + h / 2,
                      inst.pos[2] - w.cx * sn + w.cz * c);
-      m.userData.bx = m.position.x;
-      m.userData.bz = m.position.z;
+
       m.rotation.y = r;
       m.visible = false;
       world.add(m);
@@ -477,106 +458,7 @@
     });
   }
 
-  // ---------------------------------------------------------------- traffic
-  //
-  // The street moves. Trams trudge -- a Kolkata tram does about 10 km/h and
-  // looks it -- and the taxis and autos run a good deal quicker, which is most
-  // of what makes the street feel like a street rather than a model of one.
-  //
-  // Nothing is re-placed: the layout stays the source of truth and only a
-  // distance along each vehicle's own heading is animated. Instanced traffic is
-  // moved by rewriting its instance matrices; the two trams are clones and move
-  // directly. Each vehicle's collision proxy is carried along with it, and its
-  // cached world box is refreshed, or the module would keep testing you against
-  // where the taxi used to be.
-  var SPEED = {                       // metres per second
-    TRAM_CTC: 3.0,                    // ~11 km/h: a trudge
-    AMBASSADOR_TAXI: 7.2,             // ~26 km/h
-    KIT_AUTO: 5.6                     // ~20 km/h
-  };
-
-  AFRAME.registerComponent('traffic', {
-    schema: { on: { default: true } },
-
-    init: function () {
-      var scene = this.el, L = scene.layout;
-      this.movers = [];
-      if (!L) { return; }
-      var proxies = scene.proxies || {};
-      var batches = scene.batches || {};
-
-      // instanced traffic
-      Object.keys(SPEED).forEach(function (asset) {
-        (batches[asset] || []).forEach(function (b) {
-          this.movers.push({
-            kind: 'batch', batch: b, speed: SPEED[asset],
-            dist: b.list.map(function () { return 0; }),
-            asset: asset
-          });
-        }, this);
-      }, this);
-
-      // the trams are clones. buildProxies walks layout.instances in order and
-      // appends per asset, and scene.trams is filled the same way, so the i-th
-      // tram and the i-th tram proxy are the same vehicle.
-      var tramProxies = proxies[L.tram_asset] || [];
-      (scene.trams || []).forEach(function (t, i) {
-        this.movers.push({ kind: 'clone', obj: t.obj, dir: t.dir,
-                           speed: SPEED.TRAM_CTC, base: t.obj.position.x, dist: 0,
-                           proxy: tramProxies[i] || null });
-      }, this);
-
-
-      this.x0 = L.street.x0; this.x1 = L.street.x1;
-      this._box = new THREE.Box3();
-    },
-
-    // A proxy that has moved must have its cached world box refreshed, because
-    // the module culls its raycasts against that box and a stale one means you
-    // are tested against where the vehicle was, not where it is.
-    refresh: function (m) {
-      m.updateMatrixWorld(true);
-      if (!m.geometry.boundingBox) { m.geometry.computeBoundingBox(); }
-      m.userData.box = m.geometry.boundingBox.clone().applyMatrix4(m.matrixWorld);
-    },
-
-    tick: function (t, dtMs) {
-      if (!this.data.on || !dtMs || !this.movers.length) { return; }
-      var dt = Math.min(dtMs, 50) / 1000, span = this.x1 - this.x0;
-      for (var k = 0; k < this.movers.length; k++) {
-        var mv = this.movers[k];
-        if (mv.kind === 'clone') {
-          mv.dist += mv.speed * dt;
-          var x = mv.base + mv.dir * mv.dist;
-          // wrap round the street rather than stopping at the end
-          while (x > this.x1) { x -= span; mv.dist -= span; }
-          while (x < this.x0) { x += span; mv.dist += span; }
-          var dx = x - mv.obj.position.x;
-          mv.obj.position.x = x;
-          if (mv.proxy) { mv.proxy.position.x += dx; this.refresh(mv.proxy); }
-          continue;
-        }
-        var list = mv.batch.list, moved = false;
-        for (var i = 0; i < list.length; i++) {
-          var r = THREE.MathUtils.degToRad(list[i].rotY);
-          var fx = Math.cos(r), fz = -Math.sin(r);
-          var before = mv.dist[i];
-          mv.dist[i] += mv.speed * dt;
-          var nx = list[i].pos[0] + fx * mv.dist[i];
-          while (nx > this.x1) { mv.dist[i] -= span / (Math.abs(fx) || 1); nx -= span; }
-          while (nx < this.x0) { mv.dist[i] += span / (Math.abs(fx) || 1); nx += span; }
-          if (mv.dist[i] !== before) { moved = true; }
-          var px = list[i].proxy;
-          if (px) {
-            px.position.x = px.userData.bx + fx * mv.dist[i];
-            px.position.z = px.userData.bz + fz * mv.dist[i];
-            this.refresh(px);
-          }
-        }
-        if (moved) { applyBatch(mv.batch, mv.dist); }
-      }
-    }
-  });
+  // (The street is a still set: nothing moves, so there is no traffic component.)
 
   // ---------------------------------------------------------------- Quest input
   //
@@ -679,7 +561,7 @@
   // environment map is BAKED FROM THE CITY rather than being the flat gradient
   // the page starts with: one cube render from the middle of the street, run
   // through PMREM. After that the wet road and the chrome reflect actual
-  // buildings and trams, which a gradient cannot do, and it costs nothing per
+  // buildings and cars, which a gradient cannot do, and it costs nothing per
   // frame. It is re-baked when the light changes.
   var LOOK = {
     day: {
@@ -893,12 +775,6 @@
       get: function (s) { return s.getAttribute('daynight').wet; },
       set: function (s) { s.components.daynight.toggleWet(); },
       vr: 'left stick click' },
-    { id: 'tg-traffic', label: 'Traffic',
-      get: function (s) { return s.components.traffic && s.components.traffic.data.on; },
-      set: function (s) {
-        var c = s.components.traffic;
-        if (c) { c.data.on = !c.data.on; }
-      }, vr: 'T' },
     { id: 'tg-shadows', label: 'Shadows',
       get: function (s) { return !!(s.renderer && s.renderer.shadowMap.enabled); },
       set: function (s) {
@@ -947,14 +823,6 @@
     window.addEventListener('keydown', function (e) {
       var scene = document.querySelector('a-scene');
       if (e.code === 'KeyV') { goToView((scene.viewIndex || 0) + 1); }
-      else if (e.code === 'KeyT') {
-        var c = scene.components.traffic;
-        if (c) {
-          c.data.on = !c.data.on;
-          say(c.data.on ? 'Traffic moving (T to hold)' : 'Traffic held (T to move)');
-          syncPanel();
-        }
-      }
       else if (e.code === 'KeyL') {
         var r = scene.renderer;
         if (r) { r.shadowMap.enabled = !r.shadowMap.enabled; r.shadowMap.needsUpdate = true; }
