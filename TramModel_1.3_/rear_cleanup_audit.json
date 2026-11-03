@@ -1,0 +1,11 @@
+{
+  "revision": "V3.8",
+  "rear_window_width_factor": 0.85,
+  "rear_aperture_vertices_adjusted": 80,
+  "removed": [
+    "Motor | roof curved end fascia.001",
+    "Trailer | pole retrieval rope",
+    "Trailer | roof curved end fascia"
+  ],
+  "non_manifold": []
+}

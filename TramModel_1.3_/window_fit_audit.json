@@ -1,0 +1,12 @@
+{
+  "changed": [
+    "Trailer | left bay 07 main frame",
+    "Trailer | left bay 07 upper frame",
+    "Trailer | right bay 09 main frame",
+    "Trailer | right bay 09 upper frame"
+  ],
+  "body_fold_x_mm": 75.0,
+  "frame_topology": "closed manifold",
+  "openings": "Existing through-cuts span both body facets; not enlarged.",
+  "sash": "Existing sash follows the taper; unchanged."
+}

@@ -1,0 +1,11 @@
+{
+  "geometry_unchanged": true,
+  "mesh_count": 763,
+  "livery": "modern blue-white",
+  "source": "texture_guides/TEXTURE_GUIDE.md and package tex_build.py",
+  "packed_maps": [
+    "T_roof_base_modern.png",
+    "T_roof_normal.png"
+  ],
+  "body_method": "Shader bands using guide palette; schematic line art intentionally excluded to prevent duplicate windows and fittings."
+}
